@@ -1,7 +1,15 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
-import { fetchCourse, fetchSections, fetchLessons, fetchMyProgress } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import {
+  completeLesson,
+  fetchCourse,
+  fetchSections,
+  fetchLessons,
+  fetchMyProgress,
+  uncompleteLesson,
+} from "@/lib/api";
 import type { Lesson, Section } from "@/types/lesson";
 import type { Course } from "@/types/course";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -11,12 +19,21 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
-function SectionBlock({ section, lessons, completedLessonIds }: {
+function SectionBlock({
+  section,
+  lessons,
+  completedLessonIds,
+  canToggle,
+  savingLessonIds,
+  onToggle,
+}: {
   section: Section;
   lessons: Lesson[];
   completedLessonIds: Set<string>;
+  canToggle: boolean;
+  savingLessonIds: Set<string>;
+  onToggle: (lessonId: string, completed: boolean) => void;
 }) {
-
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <h3 className="font-semibold text-slate-800">{section.title}</h3>
@@ -26,10 +43,10 @@ function SectionBlock({ section, lessons, completedLessonIds }: {
       {lessons.length > 0 && (
         <ul className="mt-3 space-y-1">
           {lessons.map((lesson) => (
-            <li key={lesson.id}>
+            <li key={lesson.id} className="flex items-center gap-2 rounded-lg">
               <Link
                 href={`/lessons/${lesson.id}`}
-                className="flex items-start gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-pink-50 hover:text-pink-600"
+                className="flex min-w-0 flex-1 items-start gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-pink-50 hover:text-pink-600"
               >
                 <span className="mt-0.5 text-pink-300">▷</span>
                 <span className="leading-6">{lesson.title}</span>
@@ -37,6 +54,20 @@ function SectionBlock({ section, lessons, completedLessonIds }: {
                   <span className="ml-auto rounded-full bg-pink-100 px-2 py-0.5 text-xs font-bold text-pink-600">✓ 完了</span>
                 )}
               </Link>
+
+              {canToggle && (
+                <button
+                  onClick={() => onToggle(lesson.id, completedLessonIds.has(lesson.id))}
+                  disabled={savingLessonIds.has(lesson.id)}
+                  className="shrink-0 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {savingLessonIds.has(lesson.id)
+                    ? "更新中..."
+                    : completedLessonIds.has(lesson.id)
+                      ? "未完了へ"
+                      : "完了へ"}
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -48,11 +79,13 @@ function SectionBlock({ section, lessons, completedLessonIds }: {
 export default function CourseDetailPage({ params }: Props) {
   const { id } = use(params);
   const { user } = useAuth();
+  const router = useRouter();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [lessonsBySection, setLessonsBySection] = useState<Record<string, Lesson[]>>({});
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
+  const [savingLessonIds, setSavingLessonIds] = useState<Set<string>>(new Set());
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
@@ -72,6 +105,7 @@ export default function CourseDetailPage({ params }: Props) {
       setLessonsBySection({});
       return;
     }
+
     Promise.all(
       sections.map(async (section) => ({
         sectionId: section.id,
@@ -104,6 +138,43 @@ export default function CourseDetailPage({ params }: Props) {
     intermediate: "中級",
     advanced: "上級",
   }), []);
+
+  const handleToggleLessonComplete = async (lessonId: string, completed: boolean) => {
+    if (!user) {
+      router.push("/auth/login");
+      return;
+    }
+
+    setSavingLessonIds((prev) => {
+      const next = new Set(prev);
+      next.add(lessonId);
+      return next;
+    });
+
+    try {
+      if (completed) {
+        await uncompleteLesson(lessonId);
+        setCompletedLessonIds((prev) => {
+          const next = new Set(prev);
+          next.delete(lessonId);
+          return next;
+        });
+      } else {
+        await completeLesson(lessonId);
+        setCompletedLessonIds((prev) => {
+          const next = new Set(prev);
+          next.add(lessonId);
+          return next;
+        });
+      }
+    } finally {
+      setSavingLessonIds((prev) => {
+        const next = new Set(prev);
+        next.delete(lessonId);
+        return next;
+      });
+    }
+  };
 
   if (notFound) {
     return (
@@ -156,6 +227,9 @@ export default function CourseDetailPage({ params }: Props) {
                 section={section}
                 lessons={lessonsBySection[section.id] ?? []}
                 completedLessonIds={completedLessonIds}
+                canToggle={!!user}
+                savingLessonIds={savingLessonIds}
+                onToggle={handleToggleLessonComplete}
               />
             ))}
           </div>
