@@ -1,15 +1,108 @@
 import type { Course, CoursesResponse } from "@/types/course";
+import type { Section, Lesson, SectionsResponse, LessonsResponse } from "@/types/lesson";
+import type { User, AuthResponse } from "@/types/user";
+import type { ProgressResponse, UserLessonProgress } from "@/types/progress";
+import type { GlossaryResponse, GlossaryTerm } from "@/types/glossary";
+import { authHeaders } from "@/lib/token";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
-export async function fetchCourses(): Promise<Course[]> {
-  const res = await fetch(`${API_BASE_URL}/api/v1/courses`, {
-    cache: "no-store",
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...(init?.headers ?? {}),
+    },
   });
   if (!res.ok) {
-    throw new Error("failed to fetch courses");
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? `HTTP ${res.status}`);
   }
+  return res.json() as Promise<T>;
+}
 
-  const data = (await res.json()) as Partial<CoursesResponse>;
+// ---- Auth ----
+
+export async function registerUser(email: string, password: string, username: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/v1/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password, username }),
+  });
+}
+
+export async function loginUser(email: string, password: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+// ---- Users ----
+
+export async function fetchMe(): Promise<User> {
+  return apiFetch<User>("/api/v1/users/me");
+}
+
+export async function updateMe(data: { username?: string; avatarUrl?: string }): Promise<User> {
+  return apiFetch<User>("/api/v1/users/me", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+// ---- Courses ----
+
+export async function fetchCourses(): Promise<Course[]> {
+  const data = await apiFetch<Partial<CoursesResponse>>("/api/v1/courses", {
+    cache: "no-store",
+  });
   return Array.isArray(data.courses) ? data.courses : [];
+}
+
+export async function fetchCourse(id: string): Promise<Course> {
+  return apiFetch<Course>(`/api/v1/courses/${id}`);
+}
+
+// ---- Sections ----
+
+export async function fetchSections(courseId: string): Promise<Section[]> {
+  const data = await apiFetch<Partial<SectionsResponse>>(`/api/v1/courses/${courseId}/sections`);
+  return Array.isArray(data.sections) ? data.sections : [];
+}
+
+// ---- Lessons ----
+
+export async function fetchLessons(sectionId: string): Promise<Lesson[]> {
+  const data = await apiFetch<Partial<LessonsResponse>>(`/api/v1/sections/${sectionId}/lessons`);
+  return Array.isArray(data.lessons) ? data.lessons : [];
+}
+
+export async function fetchLesson(id: string): Promise<Lesson> {
+  return apiFetch<Lesson>(`/api/v1/lessons/${id}`);
+}
+
+export async function completeLesson(lessonId: string): Promise<UserLessonProgress> {
+  return apiFetch<UserLessonProgress>(`/api/v1/lessons/${lessonId}/complete`, {
+    method: "POST",
+  });
+}
+
+// ---- Progress ----
+
+export async function fetchMyProgress(): Promise<UserLessonProgress[]> {
+  const data = await apiFetch<Partial<ProgressResponse>>("/api/v1/users/me/progress");
+  return Array.isArray(data.progress) ? data.progress : [];
+}
+
+// ---- Glossary ----
+
+export async function fetchGlossary(): Promise<GlossaryTerm[]> {
+  const data = await apiFetch<Partial<GlossaryResponse>>("/api/v1/glossary");
+  return Array.isArray(data.terms) ? data.terms : [];
+}
+
+export async function fetchGlossaryTerm(id: string): Promise<GlossaryTerm> {
+  return apiFetch<GlossaryTerm>(`/api/v1/glossary/${id}`);
 }
