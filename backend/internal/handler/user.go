@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -40,6 +41,50 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, user)
+}
+
+type updateMeRequest struct {
+	Username  string `json:"username"`
+	AvatarURL string `json:"avatarUrl"`
+}
+
+func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	user, ok, err := h.users.FindByID(userID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	if !ok {
+		WriteError(w, http.StatusNotFound, "user not found")
+		return
+	}
+
+	var req updateMeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Username != "" {
+		user.Username = strings.TrimSpace(req.Username)
+	}
+	if req.AvatarURL != "" {
+		user.AvatarURL = req.AvatarURL
+	}
+
+	updated, err := h.users.Update(user)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, updated)
 }
 
 func JWTAuthMiddleware(secret string) func(http.Handler) http.Handler {

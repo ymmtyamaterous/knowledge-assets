@@ -1,0 +1,63 @@
+CREATE TABLE IF NOT EXISTS glossary_terms (
+  id TEXT PRIMARY KEY,
+  term TEXT NOT NULL,
+  reading TEXT NOT NULL DEFAULT '',
+  definition TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lesson_glossary_terms (
+  lesson_id TEXT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+  term_id   TEXT NOT NULL REFERENCES glossary_terms(id) ON DELETE CASCADE,
+  PRIMARY KEY (lesson_id, term_id)
+);
+
+CREATE TABLE IF NOT EXISTS quizzes (
+  id TEXT PRIMARY KEY,
+  lesson_id TEXT REFERENCES lessons(id) ON DELETE CASCADE,
+  section_id TEXT REFERENCES sections(id) ON DELETE CASCADE,
+  is_mock_exam BOOLEAN NOT NULL DEFAULT FALSE,
+  time_limit_minutes INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS quiz_questions (
+  id TEXT PRIMARY KEY,
+  quiz_id TEXT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  question_text TEXT NOT NULL,
+  explanation TEXT NOT NULL DEFAULT '',
+  "order" INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS quiz_choices (
+  id TEXT PRIMARY KEY,
+  question_id TEXT NOT NULL REFERENCES quiz_questions(id) ON DELETE CASCADE,
+  choice_text TEXT NOT NULL,
+  is_correct BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS user_quiz_results (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  quiz_id TEXT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL DEFAULT 0,
+  total INTEGER NOT NULL DEFAULT 0,
+  taken_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS badges (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  image_url TEXT NOT NULL DEFAULT '',
+  condition_type TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS user_badges (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  badge_id TEXT NOT NULL REFERENCES badges(id) ON DELETE CASCADE,
+  earned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, badge_id)
+);

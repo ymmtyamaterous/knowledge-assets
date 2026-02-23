@@ -31,3 +31,39 @@ type Course struct {
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
+
+type Section struct {
+	ID          string    `json:"id"`
+	CourseID    string    `json:"courseId"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Order       int       `json:"order"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+type Lesson struct {
+	ID        string    `json:"id"`
+	SectionID string    `json:"sectionId"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
+	Order     int       `json:"order"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type UserLessonProgress struct {
+	ID          string    `json:"id"`
+	UserID      string    `json:"userId"`
+	LessonID    string    `json:"lessonId"`
+	CompletedAt time.Time `json:"completedAt"`
+}
+
+type GlossaryTerm struct {
+	ID         string    `json:"id"`
+	Term       string    `json:"term"`
+	Reading    string    `json:"reading"`
+	Definition string    `json:"definition"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+}

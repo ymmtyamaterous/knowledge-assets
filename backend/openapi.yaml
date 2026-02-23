@@ -88,6 +88,161 @@ paths:
                 $ref: '#/components/schemas/User'
         '401':
           description: Unauthorized
+    put:
+      summary: プロフィール更新
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMeRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+  /api/v1/courses/{courseID}/sections:
+    get:
+      summary: コース内セクション一覧
+      parameters:
+        - in: path
+          name: courseID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Section'
+        '404':
+          description: Not Found
+  /api/v1/sections/{sectionID}/lessons:
+    get:
+      summary: セクション内レッスン一覧
+      parameters:
+        - in: path
+          name: sectionID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lessons:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Lesson'
+        '404':
+          description: Not Found
+  /api/v1/lessons/{id}:
+    get:
+      summary: レッスン詳細
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '404':
+          description: Not Found
+  /api/v1/lessons/{id}/complete:
+    post:
+      summary: レッスン完了（冪等）
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLessonProgress'
+        '401':
+          description: Unauthorized
+  /api/v1/users/me/progress:
+    get:
+      summary: 自分の学習進捗一覧
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  progress:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserLessonProgress'
+        '401':
+          description: Unauthorized
+  /api/v1/glossary:
+    get:
+      summary: 用語辞典一覧
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  terms:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GlossaryTerm'
+  /api/v1/glossary/{id}:
+    get:
+      summary: 用語詳細
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlossaryTerm'
+        '404':
+          description: Not Found
 
 components:
   securitySchemes:
@@ -96,6 +251,62 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    UpdateMeRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        avatarUrl:
+          type: string
+    Section:
+      type: object
+      properties:
+        id:
+          type: string
+        courseId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        order:
+          type: integer
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: string
+        sectionId:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        order:
+          type: integer
+    UserLessonProgress:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        lessonId:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
+    GlossaryTerm:
+      type: object
+      properties:
+        id:
+          type: string
+        term:
+          type: string
+        reading:
+          type: string
+        definition:
+          type: string
     RegisterRequest:
       type: object
       required: [email, password]

@@ -70,3 +70,16 @@ func (r *InMemoryUserRepository) FindByID(id string) (domain.User, bool, error) 
 	u, ok := r.byID[id]
 	return u, ok, nil
 }
+
+func (r *InMemoryUserRepository) Update(user domain.User) (domain.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, ok := r.byID[user.ID]; !ok {
+		return domain.User{}, errors.New("user not found")
+	}
+	user.UpdatedAt = time.Now().UTC()
+	r.byID[user.ID] = user
+	r.byEmail[user.Email] = user.ID
+	return user, nil
+}

@@ -25,15 +25,30 @@ func main() {
 
 	cfg := config.Load()
 
+	// Repositories
 	userRepo := repository.NewInMemoryUserRepository()
 	courseRepo := repository.NewInMemoryCourseRepository()
+	sectionRepo := repository.NewInMemorySectionRepository()
+	lessonRepo := repository.NewInMemoryLessonRepository()
+	progressRepo := repository.NewInMemoryProgressRepository()
+	glossaryRepo := repository.NewInMemoryGlossaryRepository()
 
+	// Use cases
 	authUC := usecase.NewAuthUseCase(userRepo, cfg.JWTSecret)
 	courseUC := usecase.NewCourseUseCase(courseRepo)
+	sectionUC := usecase.NewSectionUseCase(sectionRepo, courseRepo)
+	lessonUC := usecase.NewLessonUseCase(lessonRepo, sectionRepo)
+	progressUC := usecase.NewProgressUseCase(progressRepo, lessonRepo)
+	glossaryUC := usecase.NewGlossaryUseCase(glossaryRepo)
 
+	// Handlers
 	authHandler := handler.NewAuthHandler(authUC)
 	userHandler := handler.NewUserHandler(userRepo)
 	courseHandler := handler.NewCourseHandler(courseUC)
+	sectionHandler := handler.NewSectionHandler(sectionUC)
+	lessonHandler := handler.NewLessonHandler(lessonUC)
+	progressHandler := handler.NewProgressHandler(progressUC)
+	glossaryHandler := handler.NewGlossaryHandler(glossaryUC)
 
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.RequestID)
@@ -54,17 +69,36 @@ func main() {
 	})
 
 	r.Route("/api/v1", func(api chi.Router) {
+		// 認証
 		api.Route("/auth", func(auth chi.Router) {
 			auth.Post("/register", authHandler.Register)
 			auth.Post("/login", authHandler.Login)
 		})
 
+		// コース（公開）
 		api.Get("/courses", courseHandler.List)
 		api.Get("/courses/{id}", courseHandler.Get)
+		api.Get("/courses/{courseID}/sections", sectionHandler.ListByCourse)
 
+		// セクション内レッスン（公開）
+		api.Get("/sections/{sectionID}/lessons", lessonHandler.ListBySection)
+
+		// レッスン詳細（公開）
+		api.Get("/lessons/{id}", lessonHandler.Get)
+
+		// 用語辞典（公開）
+		api.Get("/glossary", glossaryHandler.List)
+		api.Get("/glossary/{id}", glossaryHandler.Get)
+
+		// 要認証エンドポイント
 		api.Group(func(private chi.Router) {
 			private.Use(handler.JWTAuthMiddleware(cfg.JWTSecret))
+
 			private.Get("/users/me", userHandler.Me)
+			private.Put("/users/me", userHandler.UpdateMe)
+
+			private.Post("/lessons/{id}/complete", progressHandler.CompleteLesson)
+			private.Get("/users/me/progress", progressHandler.GetMyProgress)
 		})
 	})
 
