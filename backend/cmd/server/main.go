@@ -17,6 +17,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -25,14 +26,26 @@ func main() {
 
 	cfg := config.Load()
 
+	// DB接続
+	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(ctx); err != nil {
+		log.Fatalf("failed to ping database: %v", err)
+	}
+	log.Println("database connected")
+
 	// Repositories
-	userRepo := repository.NewInMemoryUserRepository()
-	courseRepo := repository.NewInMemoryCourseRepository()
-	sectionRepo := repository.NewInMemorySectionRepository()
-	lessonRepo := repository.NewInMemoryLessonRepository()
-	progressRepo := repository.NewInMemoryProgressRepository()
-	glossaryRepo := repository.NewInMemoryGlossaryRepository()
-	quizRepo := repository.NewInMemoryQuizRepository()
+	userRepo := repository.NewPostgresUserRepository(db)
+	courseRepo := repository.NewPostgresCourseRepository(db)
+	sectionRepo := repository.NewPostgresSectionRepository(db)
+	lessonRepo := repository.NewPostgresLessonRepository(db)
+	progressRepo := repository.NewPostgresProgressRepository(db)
+	glossaryRepo := repository.NewPostgresGlossaryRepository(db)
+	quizRepo := repository.NewPostgresQuizRepository(db)
 
 	// Use cases
 	authUC := usecase.NewAuthUseCase(userRepo, cfg.JWTSecret)
