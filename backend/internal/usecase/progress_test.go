@@ -43,3 +43,28 @@ func TestProgressUseCase_GetCourseProgress(t *testing.T) {
 		t.Fatal("fp3 progress not found")
 	}
 }
+
+func TestProgressUseCase_UncompleteLesson(t *testing.T) {
+	progressRepo := repository.NewInMemoryProgressRepository()
+	lessonRepo := repository.NewInMemoryLessonRepository()
+	courseRepo := repository.NewInMemoryCourseRepository()
+	sectionRepo := repository.NewInMemorySectionRepository()
+
+	uc := NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo)
+
+	if _, err := uc.CompleteLesson("u1", "fp3-s1-l1"); err != nil {
+		t.Fatalf("complete lesson error: %v", err)
+	}
+
+	if err := uc.UncompleteLesson("u1", "fp3-s1-l1"); err != nil {
+		t.Fatalf("uncomplete lesson error: %v", err)
+	}
+
+	progress, err := uc.GetUserProgress("u1")
+	if err != nil {
+		t.Fatalf("get user progress error: %v", err)
+	}
+	if len(progress) != 0 {
+		t.Fatalf("expected progress to be empty, got %d", len(progress))
+	}
+}

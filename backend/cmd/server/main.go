@@ -106,6 +106,7 @@ func main() {
 			private.Put("/users/me", userHandler.UpdateMe)
 
 			private.Post("/lessons/{id}/complete", progressHandler.CompleteLesson)
+			private.Delete("/lessons/{id}/complete", progressHandler.UncompleteLesson)
 			private.Get("/users/me/progress", progressHandler.GetMyProgress)
 			private.Get("/users/me/course-progress", progressHandler.GetMyCourseProgress)
 			private.Post("/quizzes/{id}/submit", quizHandler.Submit)

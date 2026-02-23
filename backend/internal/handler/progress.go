@@ -39,6 +39,26 @@ func (h *ProgressHandler) CompleteLesson(w http.ResponseWriter, r *http.Request)
 	WriteJSON(w, http.StatusOK, progress)
 }
 
+func (h *ProgressHandler) UncompleteLesson(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	lessonID := chi.URLParam(r, "id")
+	if err := h.uc.UncompleteLesson(userID, lessonID); err != nil {
+		if errors.Is(err, usecase.ErrLessonNotFound) {
+			WriteError(w, http.StatusNotFound, "lesson not found")
+			return
+		}
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
 func (h *ProgressHandler) GetMyProgress(w http.ResponseWriter, r *http.Request) {
 	userID, _ := r.Context().Value(userIDContextKey).(string)
 	if userID == "" {

@@ -47,6 +47,14 @@ func (r *InMemoryProgressRepository) Create(p domain.UserLessonProgress) (domain
 	return p, nil
 }
 
+func (r *InMemoryProgressRepository) DeleteByUserAndLesson(userID, lessonID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	delete(r.progress, progressKey(userID, lessonID))
+	return nil
+}
+
 func (r *InMemoryProgressRepository) ListByUserID(userID string) ([]domain.UserLessonProgress, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

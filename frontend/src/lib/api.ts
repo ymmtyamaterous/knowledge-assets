@@ -107,6 +107,12 @@ export async function completeLesson(lessonId: string): Promise<UserLessonProgre
   });
 }
 
+export async function uncompleteLesson(lessonId: string): Promise<{ status: string }> {
+  return apiFetch<{ status: string }>(`/api/v1/lessons/${lessonId}/complete`, {
+    method: "DELETE",
+  });
+}
+
 // ---- Progress ----
 
 export async function fetchMyProgress(): Promise<UserLessonProgress[]> {

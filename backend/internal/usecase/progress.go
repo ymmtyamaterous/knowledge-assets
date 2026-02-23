@@ -44,6 +44,16 @@ func (uc *ProgressUseCase) CompleteLesson(userID, lessonID string) (domain.UserL
 	})
 }
 
+func (uc *ProgressUseCase) UncompleteLesson(userID, lessonID string) error {
+	if _, ok, err := uc.lessons.FindByID(lessonID); err != nil {
+		return err
+	} else if !ok {
+		return ErrLessonNotFound
+	}
+
+	return uc.progress.DeleteByUserAndLesson(userID, lessonID)
+}
+
 func (uc *ProgressUseCase) GetUserProgress(userID string) ([]domain.UserLessonProgress, error) {
 	return uc.progress.ListByUserID(userID)
 }

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { completeLesson, fetchLesson, fetchLessonQuiz, fetchMyProgress } from "@/lib/api";
+import { completeLesson, fetchLesson, fetchLessonQuiz, fetchMyProgress, uncompleteLesson } from "@/lib/api";
 import type { Lesson } from "@/types/lesson";
 import { useAuth } from "@/features/auth/AuthContext";
 import { use } from "react";
@@ -31,7 +31,7 @@ export default function LessonPage({ params }: Props) {
   const router = useRouter();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [completed, setCompleted] = useState(false);
-  const [completing, setCompleting] = useState(false);
+  const [savingProgress, setSavingProgress] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
 
@@ -61,12 +61,26 @@ export default function LessonPage({ params }: Props) {
       router.push("/auth/login");
       return;
     }
-    setCompleting(true);
+    setSavingProgress(true);
     try {
       await completeLesson(id);
       setCompleted(true);
     } finally {
-      setCompleting(false);
+      setSavingProgress(false);
+    }
+  }, [user, id, router]);
+
+  const handleUncomplete = useCallback(async () => {
+    if (!user) {
+      router.push("/auth/login");
+      return;
+    }
+    setSavingProgress(true);
+    try {
+      await uncompleteLesson(id);
+      setCompleted(false);
+    } finally {
+      setSavingProgress(false);
     }
   }, [user, id, router]);
 
@@ -110,16 +124,25 @@ export default function LessonPage({ params }: Props) {
 
         <div className="mt-8 flex items-center gap-4">
           {completed ? (
-            <span className="flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700">
-              ✓ 完了済み
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700">
+                ✓ 完了済み
+              </span>
+              <button
+                onClick={handleUncomplete}
+                disabled={savingProgress}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {savingProgress ? "更新中..." : "完了を取り消す"}
+              </button>
+            </div>
           ) : (
             <button
               onClick={handleComplete}
-              disabled={completing}
+              disabled={savingProgress}
               className="rounded-lg bg-pink-500 px-6 py-2 text-sm font-semibold text-white hover:bg-pink-600 disabled:opacity-50"
             >
-              {completing ? "登録中..." : "レッスンを完了する"}
+              {savingProgress ? "登録中..." : "レッスンを完了する"}
             </button>
           )}
 

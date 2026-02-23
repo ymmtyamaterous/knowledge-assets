@@ -27,6 +27,7 @@ type LessonRepository interface {
 type ProgressRepository interface {
 	FindByUserAndLesson(userID, lessonID string) (domain.UserLessonProgress, bool, error)
 	Create(p domain.UserLessonProgress) (domain.UserLessonProgress, error)
+	DeleteByUserAndLesson(userID, lessonID string) error
 	ListByUserID(userID string) ([]domain.UserLessonProgress, error)
 	CountByUserAndCourse(userID, courseID string, lessonIDs []string) (int, error)
 }

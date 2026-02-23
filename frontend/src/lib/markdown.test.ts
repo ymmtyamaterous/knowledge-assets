@@ -29,4 +29,11 @@ describe("convertMarkdownToHtml", () => {
     expect(html).toContain("<li>alpha</li>");
     expect(html).toContain("<li>beta</li>");
   });
+
+  it("renders single-asterisk emphasis", () => {
+    const input = "これは *強調* テキストです";
+    const html = convertMarkdownToHtml(input);
+
+    expect(html).toContain("<em>強調</em>");
+  });
 });

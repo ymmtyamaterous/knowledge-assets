@@ -11,6 +11,12 @@ function isTableSeparator(line: string): boolean {
   return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(line.trim());
 }
 
+function renderInlineMarkdown(text: string): string {
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>");
+}
+
 export function convertMarkdownToHtml(content: string): string {
   const lines = content.split("\n");
   const html: string[] = [];
@@ -35,7 +41,7 @@ export function convertMarkdownToHtml(content: string): string {
       const headerCells = line
         .split("|")
         .filter((cell) => cell.trim() !== "")
-        .map((cell) => `<th class='border border-slate-300 bg-slate-50 px-3 py-1 text-left text-sm font-semibold'>${escapeHtml(cell.trim())}</th>`)
+        .map((cell) => `<th class='border border-slate-300 bg-slate-50 px-3 py-1 text-left text-sm font-semibold'>${renderInlineMarkdown(cell.trim())}</th>`)
         .join("");
 
       const rows: string[] = [];
@@ -44,7 +50,7 @@ export function convertMarkdownToHtml(content: string): string {
         const rowCells = lines[i]
           .split("|")
           .filter((cell) => cell.trim() !== "")
-          .map((cell) => `<td class='border border-slate-300 px-3 py-1 text-sm'>${escapeHtml(cell.trim())}</td>`)
+          .map((cell) => `<td class='border border-slate-300 px-3 py-1 text-sm'>${renderInlineMarkdown(cell.trim())}</td>`)
           .join("");
         rows.push(`<tr>${rowCells}</tr>`);
         i += 1;
@@ -60,7 +66,7 @@ export function convertMarkdownToHtml(content: string): string {
         items.push(lines[i].replace(/^\d+\.\s+/, "").trim());
         i += 1;
       }
-      html.push(`<ol class='ml-6 list-decimal space-y-1'>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`);
+      html.push(`<ol class='ml-6 list-decimal space-y-1'>${items.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join("")}</ol>`);
       continue;
     }
 
@@ -70,22 +76,22 @@ export function convertMarkdownToHtml(content: string): string {
         items.push(lines[i].replace(/^-\s+/, "").trim());
         i += 1;
       }
-      html.push(`<ul class='ml-6 list-disc space-y-1'>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`);
+      html.push(`<ul class='ml-6 list-disc space-y-1'>${items.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join("")}</ul>`);
       continue;
     }
 
     if (/^###\s+/.test(line)) {
-      html.push(`<h3 class='text-lg font-semibold mt-4 mb-1'>${escapeHtml(line.replace(/^###\s+/, ""))}</h3>`);
+      html.push(`<h3 class='text-lg font-semibold mt-4 mb-1'>${renderInlineMarkdown(line.replace(/^###\s+/, ""))}</h3>`);
       i += 1;
       continue;
     }
     if (/^##\s+/.test(line)) {
-      html.push(`<h2 class='text-xl font-bold mt-6 mb-2 text-pink-500'>${escapeHtml(line.replace(/^##\s+/, ""))}</h2>`);
+      html.push(`<h2 class='text-xl font-bold mt-6 mb-2 text-pink-500'>${renderInlineMarkdown(line.replace(/^##\s+/, ""))}</h2>`);
       i += 1;
       continue;
     }
     if (/^#\s+/.test(line)) {
-      html.push(`<h1 class='text-2xl font-bold mt-6 mb-2'>${escapeHtml(line.replace(/^#\s+/, ""))}</h1>`);
+      html.push(`<h1 class='text-2xl font-bold mt-6 mb-2'>${renderInlineMarkdown(line.replace(/^#\s+/, ""))}</h1>`);
       i += 1;
       continue;
     }
@@ -96,8 +102,7 @@ export function convertMarkdownToHtml(content: string): string {
       continue;
     }
 
-    const inlineStrong = escapeHtml(line).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    html.push(`<p class='mt-3'>${inlineStrong}</p>`);
+    html.push(`<p class='mt-3'>${renderInlineMarkdown(line)}</p>`);
     i += 1;
   }
 
