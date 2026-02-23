@@ -20,6 +20,7 @@ export default function QuizPage({ params }: Props) {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
   const [finalScore, setFinalScore] = useState<{ score: number; total: number } | null>(null);
+  const answeredCount = detail ? Object.keys(answers).filter((qId) => !!answers[qId]).length : 0;
 
   useEffect(() => {
     fetchQuiz(id)
@@ -56,7 +57,7 @@ export default function QuizPage({ params }: Props) {
 
   if (!detail) {
     return (
-      <main>
+      <main className="mx-auto w-full max-w-3xl">
         <p className="text-slate-500">クイズを読み込めませんでした。</p>
       </main>
     );
@@ -64,7 +65,7 @@ export default function QuizPage({ params }: Props) {
 
   if (!user) {
     return (
-      <main>
+      <main className="mx-auto w-full max-w-3xl">
         <h1 className="mb-4 text-2xl font-bold text-slate-800">クイズ</h1>
         <p className="text-slate-600">クイズ回答を記録するにはログインが必要です。</p>
         <Link href="/auth/login" className="mt-4 inline-block rounded-md bg-pink-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600">
@@ -76,11 +77,14 @@ export default function QuizPage({ params }: Props) {
 
   if (submitted && finalScore) {
     return (
-      <main>
+      <main className="mx-auto w-full max-w-3xl">
         <div className="rounded-xl border border-pink-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-slate-800">結果</h1>
           <p className="mt-3 text-lg font-semibold text-pink-600">
             {finalScore.score} / {finalScore.total} 問 正解
+          </p>
+          <p className="mt-1 text-sm text-slate-500">
+            正答率: {Math.round((finalScore.score / Math.max(finalScore.total, 1)) * 100)}%
           </p>
           <Link href="/courses" className="mt-6 inline-block rounded-md bg-pink-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600">
             コース一覧へ戻る
@@ -92,19 +96,26 @@ export default function QuizPage({ params }: Props) {
 
   if (!currentQuestion) {
     return (
-      <main>
+      <main className="mx-auto w-full max-w-3xl">
         <p className="text-slate-500">問題がありません。</p>
       </main>
     );
   }
 
   return (
-    <main>
-      <div className="mb-4 text-sm text-slate-500">
-        問題 {currentIndex + 1} / {detail.questions.length}
+    <main className="mx-auto w-full max-w-3xl">
+      <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
+        <span>問題 {currentIndex + 1} / {detail.questions.length}</span>
+        <span>回答済み {answeredCount} / {detail.questions.length}</span>
+      </div>
+      <div className="mb-4 h-2 w-full rounded-full bg-slate-100">
+        <div
+          className="h-2 rounded-full bg-pink-500 transition-all"
+          style={{ width: `${((currentIndex + 1) / Math.max(detail.questions.length, 1)) * 100}%` }}
+        />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <h1 className="text-xl font-bold text-slate-800">{currentQuestion.questionText}</h1>
 
         <div className="mt-4 space-y-2">
@@ -141,14 +152,16 @@ export default function QuizPage({ params }: Props) {
           {currentIndex < detail.questions.length - 1 ? (
             <button
               onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, detail.questions.length - 1))}
-              className="rounded-md bg-pink-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600"
+              disabled={!answers[currentQuestion.id]}
+              className="rounded-md bg-pink-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               次へ
             </button>
           ) : (
             <button
               onClick={handleFinish}
-              className="rounded-md bg-pink-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600"
+              disabled={answeredCount < detail.questions.length}
+              className="rounded-md bg-pink-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               解答を送信
             </button>

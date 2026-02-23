@@ -29,12 +29,12 @@ function SectionBlock({ section, lessons, completedLessonIds }: {
             <li key={lesson.id}>
               <Link
                 href={`/lessons/${lesson.id}`}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-pink-50 hover:text-pink-600"
+                className="flex items-start gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-pink-50 hover:text-pink-600"
               >
-                <span className="text-pink-300">▷</span>
-                <span>{lesson.title}</span>
+                <span className="mt-0.5 text-pink-300">▷</span>
+                <span className="leading-6">{lesson.title}</span>
                 {completedLessonIds.has(lesson.id) && (
-                  <span className="ml-auto text-sm font-bold text-pink-500">✓</span>
+                  <span className="ml-auto rounded-full bg-pink-100 px-2 py-0.5 text-xs font-bold text-pink-600">✓ 完了</span>
                 )}
               </Link>
             </li>
@@ -136,7 +136,7 @@ export default function CourseDetailPage({ params }: Props) {
       <div className="mb-6 rounded-2xl border border-pink-100 bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-bold text-slate-800">{course.title}</h1>
         <p className="mt-2 text-slate-600">{course.description}</p>
-        <div className="mt-3 flex gap-3 text-sm text-slate-500">
+        <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
           <span className="rounded-full bg-pink-50 px-3 py-1">
             難易度: {difficultyLabel[course.difficulty] ?? course.difficulty}
           </span>

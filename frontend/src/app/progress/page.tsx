@@ -10,12 +10,14 @@ export default function ProgressPage() {
   const { user, loading } = useAuth();
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([]);
   const [openCourseId, setOpenCourseId] = useState<string>("");
+  const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
     if (!user) {
       setCourseProgress([]);
       return;
     }
+    setFetching(true);
     fetchCourseProgress()
       .then((res) => {
         const list = res ?? [];
@@ -24,7 +26,8 @@ export default function ProgressPage() {
           setOpenCourseId(list[0].courseId);
         }
       })
-      .catch(() => setCourseProgress([]));
+      .catch(() => setCourseProgress([]))
+      .finally(() => setFetching(false));
   }, [user]);
 
   if (!loading && !user) {
@@ -40,12 +43,25 @@ export default function ProgressPage() {
   }
 
   return (
-    <main>
+    <main className="mx-auto w-full max-w-4xl">
       <h1 className="mb-6 text-2xl font-bold text-slate-800">学習進捗</h1>
+
+      {fetching && (
+        <div className="space-y-3">
+          <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
+          <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
+        </div>
+      )}
+
+      {!fetching && courseProgress.length === 0 && (
+        <p className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+          まだ進捗データがありません。レッスンを完了するとここに表示されます。
+        </p>
+      )}
 
       <div className="space-y-4">
         {courseProgress.map((cp) => (
-          <div key={cp.courseId} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div key={cp.courseId} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <button
               onClick={() => setOpenCourseId((prev) => (prev === cp.courseId ? "" : cp.courseId))}
               className="flex w-full items-center justify-between text-left"

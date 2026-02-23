@@ -21,14 +21,17 @@ const INDEXES = [
 export default function GlossaryPage() {
   const [terms, setTerms] = useState<GlossaryTerm[]>([]);
   const [tags, setTags] = useState<GlossaryTag[]>([]);
+  const [loadingTerms, setLoadingTerms] = useState(true);
   const [selectedTagId, setSelectedTagId] = useState<string>("");
   const [selectedIndex, setSelectedIndex] = useState<string>("");
   const [keyword, setKeyword] = useState("");
 
   useEffect(() => {
+    setLoadingTerms(true);
     fetchGlossary(selectedTagId || undefined)
       .then((res) => setTerms(res ?? []))
-      .catch(() => setTerms([]));
+      .catch(() => setTerms([]))
+      .finally(() => setLoadingTerms(false));
   }, [selectedTagId]);
 
   useEffect(() => {
@@ -83,7 +86,7 @@ export default function GlossaryPage() {
         </div>
       </div>
 
-      <div className="mb-5 grid grid-cols-8 gap-2 md:grid-cols-12">
+      <div className="mb-5 grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-12">
         <button
           onClick={() => setSelectedIndex("")}
           className={`rounded px-2 py-1 text-xs ${selectedIndex === "" ? "bg-pink-500 text-white" : "bg-slate-100 text-slate-600"}`}
@@ -101,8 +104,14 @@ export default function GlossaryPage() {
         ))}
       </div>
 
-      {filteredTerms.length === 0 ? (
-        <p className="text-sm text-slate-500">用語データを取得できませんでした。</p>
+      {loadingTerms ? (
+        <div className="space-y-3">
+          <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
+          <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
+          <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
+        </div>
+      ) : filteredTerms.length === 0 ? (
+        <p className="text-sm text-slate-500">条件に一致する用語がありません。</p>
       ) : (
         <div className="space-y-3">
           {filteredTerms.map((term) => {
