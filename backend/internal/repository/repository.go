@@ -32,6 +32,15 @@ type ProgressRepository interface {
 }
 
 type GlossaryRepository interface {
-	List() ([]domain.GlossaryTerm, error)
+	List(tagID string) ([]domain.GlossaryTerm, error)
 	FindByID(id string) (domain.GlossaryTerm, bool, error)
+	ListTags() ([]domain.GlossaryTag, error)
+}
+
+type QuizRepository interface {
+	FindByLessonID(lessonID string) (domain.Quiz, bool, error)
+	FindByID(id string) (domain.Quiz, bool, error)
+	ListQuestions(quizID string) ([]domain.QuizQuestion, error)
+	CreateResult(result domain.UserQuizResult) (domain.UserQuizResult, error)
+	ListResultsByUserID(userID string) ([]domain.UserQuizResult, error)
 }

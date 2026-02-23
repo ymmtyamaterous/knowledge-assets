@@ -57,3 +57,22 @@ func (h *ProgressHandler) GetMyProgress(w http.ResponseWriter, r *http.Request) 
 	}
 	WriteJSON(w, http.StatusOK, map[string]any{"progress": list})
 }
+
+func (h *ProgressHandler) GetMyCourseProgress(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	list, err := h.uc.GetCourseProgress(userID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	if list == nil {
+		list = []domain.CourseProgress{}
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"courseProgress": list})
+}

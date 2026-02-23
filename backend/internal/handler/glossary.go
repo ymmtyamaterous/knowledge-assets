@@ -18,12 +18,32 @@ func NewGlossaryHandler(uc *usecase.GlossaryUseCase) *GlossaryHandler {
 }
 
 func (h *GlossaryHandler) List(w http.ResponseWriter, _ *http.Request) {
-	terms, err := h.uc.List()
+
+	terms, err := h.uc.List("")
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	WriteJSON(w, http.StatusOK, map[string]any{"terms": terms})
+}
+
+func (h *GlossaryHandler) ListWithFilter(w http.ResponseWriter, r *http.Request) {
+	tagID := r.URL.Query().Get("tagId")
+	terms, err := h.uc.List(tagID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"terms": terms})
+}
+
+func (h *GlossaryHandler) ListTags(w http.ResponseWriter, _ *http.Request) {
+	tags, err := h.uc.ListTags()
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"tags": tags})
 }
 
 func (h *GlossaryHandler) Get(w http.ResponseWriter, r *http.Request) {

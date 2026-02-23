@@ -210,9 +210,35 @@ paths:
                       $ref: '#/components/schemas/UserLessonProgress'
         '401':
           description: Unauthorized
+  /api/v1/users/me/course-progress:
+    get:
+      summary: コース/セクション単位の進捗サマリ
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  courseProgress:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CourseProgress'
+        '401':
+          description: Unauthorized
   /api/v1/glossary:
     get:
       summary: 用語辞典一覧
+      parameters:
+        - in: query
+          name: tagId
+          schema:
+            type: string
+          required: false
+          description: タグIDでの絞り込み
       responses:
         '200':
           description: OK
@@ -225,6 +251,21 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/GlossaryTerm'
+  /api/v1/glossary/tags:
+    get:
+      summary: 用語タグ一覧
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GlossaryTag'
   /api/v1/glossary/{id}:
     get:
       summary: 用語詳細
@@ -243,6 +284,87 @@ paths:
                 $ref: '#/components/schemas/GlossaryTerm'
         '404':
           description: Not Found
+  /api/v1/lessons/{lessonId}/quiz:
+    get:
+      summary: レッスンに紐づくクイズ取得
+      parameters:
+        - in: path
+          name: lessonId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quiz'
+        '404':
+          description: Not Found
+  /api/v1/quizzes/{id}:
+    get:
+      summary: クイズ詳細（問題・選択肢）取得
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizDetailResponse'
+        '404':
+          description: Not Found
+  /api/v1/quizzes/{id}/submit:
+    post:
+      summary: クイズ回答送信
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitQuizRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitQuizResponse'
+        '401':
+          description: Unauthorized
+  /api/v1/users/me/quiz-results:
+    get:
+      summary: 自分のクイズ結果履歴
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserQuizResult'
+        '401':
+          description: Unauthorized
 
 components:
   securitySchemes:
@@ -307,6 +429,144 @@ components:
           type: string
         definition:
           type: string
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlossaryTag'
+    GlossaryTag:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Quiz:
+      type: object
+      properties:
+        id:
+          type: string
+        lessonId:
+          type: string
+        sectionId:
+          type: string
+        isMockExam:
+          type: boolean
+        timeLimitMinutes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+    QuizChoice:
+      type: object
+      properties:
+        id:
+          type: string
+        questionId:
+          type: string
+        choiceText:
+          type: string
+        isCorrect:
+          type: boolean
+    QuizQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+        quizId:
+          type: string
+        questionText:
+          type: string
+        explanation:
+          type: string
+        order:
+          type: integer
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizChoice'
+    QuizDetailResponse:
+      type: object
+      properties:
+        quiz:
+          $ref: '#/components/schemas/Quiz'
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizQuestion'
+    SubmitQuizAnswer:
+      type: object
+      required: [questionId, choiceId]
+      properties:
+        questionId:
+          type: string
+        choiceId:
+          type: string
+    SubmitQuizRequest:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmitQuizAnswer'
+    UserQuizResult:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        quizId:
+          type: string
+        score:
+          type: integer
+        total:
+          type: integer
+        takenAt:
+          type: string
+          format: date-time
+    SubmitQuizResponse:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/UserQuizResult'
+        correct:
+          type: object
+          additionalProperties:
+            type: boolean
+    SectionProgress:
+      type: object
+      properties:
+        sectionId:
+          type: string
+        sectionTitle:
+          type: string
+        totalLessons:
+          type: integer
+        completedLessons:
+          type: integer
+        progressRate:
+          type: integer
+    CourseProgress:
+      type: object
+      properties:
+        courseId:
+          type: string
+        courseTitle:
+          type: string
+        totalLessons:
+          type: integer
+        completedLessons:
+          type: integer
+        progressRate:
+          type: integer
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/SectionProgress'
     RegisterRequest:
       type: object
       required: [email, password]

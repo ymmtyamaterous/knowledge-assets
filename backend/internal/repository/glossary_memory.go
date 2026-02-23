@@ -9,8 +9,10 @@ import (
 )
 
 type InMemoryGlossaryRepository struct {
-	mu    sync.RWMutex
-	terms map[string]domain.GlossaryTerm
+	mu       sync.RWMutex
+	terms    map[string]domain.GlossaryTerm
+	tags     map[string]domain.GlossaryTag
+	termTags map[string][]string
 }
 
 func NewInMemoryGlossaryRepository() *InMemoryGlossaryRepository {
@@ -53,20 +55,83 @@ func NewInMemoryGlossaryRepository() *InMemoryGlossaryRepository {
 		{ID: "g32", Term: "インデックスファンド", Reading: "いんでっくすふぁんど", Definition: "日経平均やS&P500などの市場指数に連動することを目指す投資信託。コストが低く長期投資に適している。", CreatedAt: now, UpdatedAt: now},
 		{ID: "g33", Term: "信用リスク", Reading: "しんようりすく", Definition: "債券などの発行体が利息の支払いや元本の返済ができなくなるリスク（デフォルトリスク）。", CreatedAt: now, UpdatedAt: now},
 	}
+	tagSeed := []domain.GlossaryTag{
+		{ID: "tag-fp", Name: "FP", CreatedAt: now},
+		{ID: "tag-boki", Name: "簿記", CreatedAt: now},
+		{ID: "tag-asset", Name: "資産運用", CreatedAt: now},
+		{ID: "tag-tax", Name: "税金", CreatedAt: now},
+		{ID: "tag-insurance", Name: "保険", CreatedAt: now},
+	}
+
 	m := make(map[string]domain.GlossaryTerm, len(seed))
 	for _, t := range seed {
 		m[t.ID] = t
 	}
-	return &InMemoryGlossaryRepository{terms: m}
+
+	tags := make(map[string]domain.GlossaryTag, len(tagSeed))
+	for _, tag := range tagSeed {
+		tags[tag.ID] = tag
+	}
+
+	termTags := map[string][]string{
+		"g01": {"tag-fp"},
+		"g04": {"tag-fp", "tag-insurance"},
+		"g05": {"tag-fp", "tag-tax"},
+		"g06": {"tag-fp", "tag-insurance"},
+		"g07": {"tag-fp", "tag-insurance"},
+		"g08": {"tag-fp", "tag-insurance"},
+		"g09": {"tag-fp"},
+		"g10": {"tag-fp"},
+		"g14": {"tag-fp", "tag-asset", "tag-tax"},
+		"g15": {"tag-fp", "tag-asset", "tag-tax"},
+		"g16": {"tag-fp", "tag-tax"},
+		"g20": {"tag-boki"},
+		"g21": {"tag-boki"},
+		"g22": {"tag-boki"},
+		"g23": {"tag-boki"},
+		"g24": {"tag-boki"},
+		"g25": {"tag-boki"},
+		"g26": {"tag-boki"},
+		"g27": {"tag-asset"},
+		"g28": {"tag-asset"},
+		"g29": {"tag-asset"},
+		"g30": {"tag-asset"},
+		"g31": {"tag-asset"},
+		"g32": {"tag-asset"},
+		"g33": {"tag-asset"},
+	}
+
+	return &InMemoryGlossaryRepository{terms: m, tags: tags, termTags: termTags}
 }
 
-func (r *InMemoryGlossaryRepository) List() ([]domain.GlossaryTerm, error) {
+func (r *InMemoryGlossaryRepository) List(tagID string) ([]domain.GlossaryTerm, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	list := make([]domain.GlossaryTerm, 0, len(r.terms))
-	for _, t := range r.terms {
-		list = append(list, t)
+	for _, term := range r.terms {
+		mappedTagIDs := r.termTags[term.ID]
+		if tagID != "" {
+			matched := false
+			for _, id := range mappedTagIDs {
+				if id == tagID {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				continue
+			}
+		}
+
+		term.Tags = make([]domain.GlossaryTag, 0, len(mappedTagIDs))
+		for _, id := range mappedTagIDs {
+			if tag, ok := r.tags[id]; ok {
+				term.Tags = append(term.Tags, tag)
+			}
+		}
+
+		list = append(list, term)
 	}
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].Reading < list[j].Reading
@@ -79,5 +144,28 @@ func (r *InMemoryGlossaryRepository) FindByID(id string) (domain.GlossaryTerm, b
 	defer r.mu.RUnlock()
 
 	t, ok := r.terms[id]
+	if ok {
+		tagIDs := r.termTags[id]
+		t.Tags = make([]domain.GlossaryTag, 0, len(tagIDs))
+		for _, tagID := range tagIDs {
+			if tag, exists := r.tags[tagID]; exists {
+				t.Tags = append(t.Tags, tag)
+			}
+		}
+	}
 	return t, ok, nil
+}
+
+func (r *InMemoryGlossaryRepository) ListTags() ([]domain.GlossaryTag, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	list := make([]domain.GlossaryTag, 0, len(r.tags))
+	for _, tag := range r.tags {
+		list = append(list, tag)
+	}
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].Name < list[j].Name
+	})
+	return list, nil
 }

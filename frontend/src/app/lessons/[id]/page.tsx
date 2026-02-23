@@ -3,41 +3,24 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { completeLesson, fetchLesson, fetchMyProgress } from "@/lib/api";
+import { completeLesson, fetchLesson, fetchLessonQuiz, fetchMyProgress } from "@/lib/api";
 import type { Lesson } from "@/types/lesson";
 import { useAuth } from "@/features/auth/AuthContext";
 import { use } from "react";
+import type { Quiz } from "@/types/quiz";
+import { convertMarkdownToHtml } from "@/lib/markdown";
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
 function MarkdownContent({ content }: { content: string }) {
-  // 簡易Markdown→HTML変換（実用ではreact-markdownを使う想定）
-  const html = content
-    .replace(/^### (.+)$/gm, "<h3 class='text-lg font-semibold mt-4 mb-1'>$1</h3>")
-    .replace(/^## (.+)$/gm, "<h2 class='text-xl font-bold mt-6 mb-2 text-pink-500'>$1</h2>")
-    .replace(/^# (.+)$/gm, "<h1 class='text-2xl font-bold mt-6 mb-2'>$1</h1>")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/^- (.+)$/gm, "<li class='ml-4 list-disc'>$1</li>")
-    .replace(/```[\s\S]*?```/g, (m) => {
-      const code = m.replace(/^```\w*\n?/, "").replace(/```$/, "");
-      return `<pre class='bg-slate-100 rounded p-3 text-sm overflow-x-auto my-3'><code>${code}</code></pre>`;
-    })
-    .replace(/\n\n/g, "</p><p class='mt-3'>")
-    .replace(/^\|(.+)\|$/gm, (row) => {
-      const cells = row
-        .split("|")
-        .filter((c) => c.trim() !== "")
-        .map((c) => `<td class='border border-slate-300 px-3 py-1 text-sm'>${c.trim()}</td>`)
-        .join("");
-      return `<tr>${cells}</tr>`;
-    });
+  const html = convertMarkdownToHtml(content);
 
   return (
     <div
       className="prose prose-slate max-w-none"
-      dangerouslySetInnerHTML={{ __html: `<p class='mt-3'>${html}</p>` }}
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   );
 }
@@ -50,11 +33,18 @@ export default function LessonPage({ params }: Props) {
   const [completed, setCompleted] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
 
   useEffect(() => {
     fetchLesson(id)
       .then(setLesson)
       .catch(() => setNotFound(true));
+  }, [id]);
+
+  useEffect(() => {
+    fetchLessonQuiz(id)
+      .then(setQuiz)
+      .catch(() => setQuiz(null));
   }, [id]);
 
   useEffect(() => {
@@ -131,6 +121,15 @@ export default function LessonPage({ params }: Props) {
             >
               {completing ? "登録中..." : "レッスンを完了する"}
             </button>
+          )}
+
+          {quiz && (
+            <Link
+              href={`/quiz/${quiz.id}`}
+              className="rounded-lg border border-pink-200 px-4 py-2 text-sm font-semibold text-pink-600 hover:bg-pink-50"
+            >
+              このレッスンのクイズへ
+            </Link>
           )}
         </div>
       </div>

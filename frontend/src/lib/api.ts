@@ -1,8 +1,26 @@
 import type { Course, CoursesResponse } from "@/types/course";
 import type { Section, Lesson, SectionsResponse, LessonsResponse } from "@/types/lesson";
 import type { User, AuthResponse } from "@/types/user";
-import type { ProgressResponse, UserLessonProgress } from "@/types/progress";
-import type { GlossaryResponse, GlossaryTerm } from "@/types/glossary";
+import type {
+  ProgressResponse,
+  UserLessonProgress,
+  CourseProgress,
+  CourseProgressResponse,
+} from "@/types/progress";
+import type {
+  GlossaryResponse,
+  GlossaryTerm,
+  GlossaryTag,
+  GlossaryTagsResponse,
+} from "@/types/glossary";
+import type {
+  Quiz,
+  QuizDetail,
+  SubmitQuizAnswer,
+  SubmitQuizResponse,
+  QuizResultsResponse,
+  UserQuizResult,
+} from "@/types/quiz";
 import { authHeaders } from "@/lib/token";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -98,11 +116,42 @@ export async function fetchMyProgress(): Promise<UserLessonProgress[]> {
 
 // ---- Glossary ----
 
-export async function fetchGlossary(): Promise<GlossaryTerm[]> {
-  const data = await apiFetch<Partial<GlossaryResponse>>("/api/v1/glossary");
+export async function fetchGlossary(tagId?: string): Promise<GlossaryTerm[]> {
+  const query = tagId ? `?tagId=${encodeURIComponent(tagId)}` : "";
+  const data = await apiFetch<Partial<GlossaryResponse>>(`/api/v1/glossary${query}`);
   return Array.isArray(data.terms) ? data.terms : [];
 }
 
 export async function fetchGlossaryTerm(id: string): Promise<GlossaryTerm> {
   return apiFetch<GlossaryTerm>(`/api/v1/glossary/${id}`);
+}
+
+export async function fetchGlossaryTags(): Promise<GlossaryTag[]> {
+  const data = await apiFetch<Partial<GlossaryTagsResponse>>("/api/v1/glossary/tags");
+  return Array.isArray(data.tags) ? data.tags : [];
+}
+
+export async function fetchCourseProgress(): Promise<CourseProgress[]> {
+  const data = await apiFetch<Partial<CourseProgressResponse>>("/api/v1/users/me/course-progress");
+  return Array.isArray(data.courseProgress) ? data.courseProgress : [];
+}
+
+export async function fetchLessonQuiz(lessonId: string): Promise<Quiz> {
+  return apiFetch<Quiz>(`/api/v1/lessons/${lessonId}/quiz`);
+}
+
+export async function fetchQuiz(id: string): Promise<QuizDetail> {
+  return apiFetch<QuizDetail>(`/api/v1/quizzes/${id}`);
+}
+
+export async function submitQuiz(id: string, answers: SubmitQuizAnswer[]): Promise<SubmitQuizResponse> {
+  return apiFetch<SubmitQuizResponse>(`/api/v1/quizzes/${id}/submit`, {
+    method: "POST",
+    body: JSON.stringify({ answers }),
+  });
+}
+
+export async function fetchMyQuizResults(): Promise<UserQuizResult[]> {
+  const data = await apiFetch<Partial<QuizResultsResponse>>("/api/v1/users/me/quiz-results");
+  return Array.isArray(data.results) ? data.results : [];
 }

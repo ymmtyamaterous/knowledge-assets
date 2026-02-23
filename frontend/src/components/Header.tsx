@@ -20,6 +20,9 @@ export default function Header() {
           <Link href="/glossary" className="text-slate-600 hover:text-pink-500">
             用語辞典
           </Link>
+          <Link href="/progress" className="text-slate-600 hover:text-pink-500">
+            進捗
+          </Link>
 
           {!loading && (
             <>

@@ -1,14 +1,21 @@
-import { fetchCourse, fetchSections, fetchLessons } from "@/lib/api";
-import type { Section } from "@/types/lesson";
+"use client";
+
+import { use, useEffect, useMemo, useState } from "react";
+import { fetchCourse, fetchSections, fetchLessons, fetchMyProgress } from "@/lib/api";
+import type { Lesson, Section } from "@/types/lesson";
+import type { Course } from "@/types/course";
+import { useAuth } from "@/features/auth/AuthContext";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
-async function SectionBlock({ section }: { section: Section }) {
-  const lessons = await fetchLessons(section.id).catch(() => []);
+function SectionBlock({ section, lessons, completedLessonIds }: {
+  section: Section;
+  lessons: Lesson[];
+  completedLessonIds: Set<string>;
+}) {
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -25,7 +32,10 @@ async function SectionBlock({ section }: { section: Section }) {
                 className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-pink-50 hover:text-pink-600"
               >
                 <span className="text-pink-300">▷</span>
-                {lesson.title}
+                <span>{lesson.title}</span>
+                {completedLessonIds.has(lesson.id) && (
+                  <span className="ml-auto text-sm font-bold text-pink-500">✓</span>
+                )}
               </Link>
             </li>
           ))}
@@ -35,21 +45,85 @@ async function SectionBlock({ section }: { section: Section }) {
   );
 }
 
-export default async function CourseDetailPage({ params }: Props) {
-  const { id } = await params;
+export default function CourseDetailPage({ params }: Props) {
+  const { id } = use(params);
+  const { user } = useAuth();
 
-  const [course, sections] = await Promise.all([
-    fetchCourse(id).catch(() => null),
-    fetchSections(id).catch(() => []),
-  ]);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [lessonsBySection, setLessonsBySection] = useState<Record<string, Lesson[]>>({});
+  const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
+  const [notFound, setNotFound] = useState(false);
 
-  if (!course) return notFound();
+  useEffect(() => {
+    fetchCourse(id)
+      .then(setCourse)
+      .catch(() => setNotFound(true));
+  }, [id]);
 
-  const difficultyLabel: Record<string, string> = {
+  useEffect(() => {
+    fetchSections(id)
+      .then((res) => setSections(res ?? []))
+      .catch(() => setSections([]));
+  }, [id]);
+
+  useEffect(() => {
+    if (sections.length === 0) {
+      setLessonsBySection({});
+      return;
+    }
+    Promise.all(
+      sections.map(async (section) => ({
+        sectionId: section.id,
+        lessons: await fetchLessons(section.id).catch(() => []),
+      })),
+    ).then((pairs) => {
+      const next: Record<string, Lesson[]> = {};
+      pairs.forEach((pair) => {
+        next[pair.sectionId] = pair.lessons ?? [];
+      });
+      setLessonsBySection(next);
+    });
+  }, [sections]);
+
+  useEffect(() => {
+    if (!user) {
+      setCompletedLessonIds(new Set());
+      return;
+    }
+    fetchMyProgress()
+      .then((progress) => {
+        const ids = new Set((progress ?? []).map((p) => p.lessonId));
+        setCompletedLessonIds(ids);
+      })
+      .catch(() => setCompletedLessonIds(new Set()));
+  }, [user]);
+
+  const difficultyLabel = useMemo<Record<string, string>>(() => ({
     beginner: "初級",
     intermediate: "中級",
     advanced: "上級",
-  };
+  }), []);
+
+  if (notFound) {
+    return (
+      <main>
+        <p className="text-slate-500">コースが見つかりませんでした。</p>
+        <Link href="/" className="mt-4 inline-block text-sm text-pink-400 hover:underline">
+          ← トップに戻る
+        </Link>
+      </main>
+    );
+  }
+
+  if (!course) {
+    return (
+      <main>
+        <div className="h-8 w-48 animate-pulse rounded bg-slate-200" />
+        <div className="mt-4 h-64 animate-pulse rounded bg-slate-100" />
+      </main>
+    );
+  }
 
   return (
     <main>
@@ -77,7 +151,12 @@ export default async function CourseDetailPage({ params }: Props) {
         {sections.length > 0 ? (
           <div className="space-y-4">
             {sections.map((section) => (
-              <SectionBlock key={section.id} section={section} />
+              <SectionBlock
+                key={section.id}
+                section={section}
+                lessons={lessonsBySection[section.id] ?? []}
+                completedLessonIds={completedLessonIds}
+              />
             ))}
           </div>
         ) : (

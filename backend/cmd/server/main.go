@@ -32,14 +32,16 @@ func main() {
 	lessonRepo := repository.NewInMemoryLessonRepository()
 	progressRepo := repository.NewInMemoryProgressRepository()
 	glossaryRepo := repository.NewInMemoryGlossaryRepository()
+	quizRepo := repository.NewInMemoryQuizRepository()
 
 	// Use cases
 	authUC := usecase.NewAuthUseCase(userRepo, cfg.JWTSecret)
 	courseUC := usecase.NewCourseUseCase(courseRepo)
 	sectionUC := usecase.NewSectionUseCase(sectionRepo, courseRepo)
 	lessonUC := usecase.NewLessonUseCase(lessonRepo, sectionRepo)
-	progressUC := usecase.NewProgressUseCase(progressRepo, lessonRepo)
+	progressUC := usecase.NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo)
 	glossaryUC := usecase.NewGlossaryUseCase(glossaryRepo)
+	quizUC := usecase.NewQuizUseCase(quizRepo, lessonRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authUC)
@@ -49,6 +51,7 @@ func main() {
 	lessonHandler := handler.NewLessonHandler(lessonUC)
 	progressHandler := handler.NewProgressHandler(progressUC)
 	glossaryHandler := handler.NewGlossaryHandler(glossaryUC)
+	quizHandler := handler.NewQuizHandler(quizUC)
 
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.RequestID)
@@ -87,8 +90,13 @@ func main() {
 		api.Get("/lessons/{id}", lessonHandler.Get)
 
 		// 用語辞典（公開）
-		api.Get("/glossary", glossaryHandler.List)
+		api.Get("/glossary", glossaryHandler.ListWithFilter)
+		api.Get("/glossary/tags", glossaryHandler.ListTags)
 		api.Get("/glossary/{id}", glossaryHandler.Get)
+
+		// クイズ（公開）
+		api.Get("/lessons/{lessonId}/quiz", quizHandler.GetByLesson)
+		api.Get("/quizzes/{id}", quizHandler.Get)
 
 		// 要認証エンドポイント
 		api.Group(func(private chi.Router) {
@@ -99,6 +107,9 @@ func main() {
 
 			private.Post("/lessons/{id}/complete", progressHandler.CompleteLesson)
 			private.Get("/users/me/progress", progressHandler.GetMyProgress)
+			private.Get("/users/me/course-progress", progressHandler.GetMyCourseProgress)
+			private.Post("/quizzes/{id}/submit", quizHandler.Submit)
+			private.Get("/users/me/quiz-results", quizHandler.ListMyResults)
 		})
 	})
 

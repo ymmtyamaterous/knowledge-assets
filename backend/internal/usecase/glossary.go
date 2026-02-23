@@ -17,8 +17,8 @@ func NewGlossaryUseCase(glossary repository.GlossaryRepository) *GlossaryUseCase
 	return &GlossaryUseCase{glossary: glossary}
 }
 
-func (uc *GlossaryUseCase) List() ([]domain.GlossaryTerm, error) {
-	return uc.glossary.List()
+func (uc *GlossaryUseCase) List(tagID string) ([]domain.GlossaryTerm, error) {
+	return uc.glossary.List(tagID)
 }
 
 func (uc *GlossaryUseCase) Get(id string) (domain.GlossaryTerm, error) {
@@ -30,4 +30,8 @@ func (uc *GlossaryUseCase) Get(id string) (domain.GlossaryTerm, error) {
 		return domain.GlossaryTerm{}, ErrGlossaryTermNotFound
 	}
 	return t, nil
+}
+
+func (uc *GlossaryUseCase) ListTags() ([]domain.GlossaryTag, error) {
+	return uc.glossary.ListTags()
 }
