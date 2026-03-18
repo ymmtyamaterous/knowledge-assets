@@ -125,3 +125,12 @@ type CourseProgress struct {
 	ProgressRate     int               `json:"progressRate"`
 	Sections         []SectionProgress `json:"sections"`
 }
+
+type UserNote struct {
+	ID        string    `json:"id"`
+	UserID    string    `json:"userId"`
+	LessonID  string    `json:"lessonId"`
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}

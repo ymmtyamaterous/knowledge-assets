@@ -1,8 +1,11 @@
-import { fetchCourses } from "@/lib/api";
+import { fetchCourses, fetchDailyTerm } from "@/lib/api";
 import Link from "next/link";
 
 export default async function HomePage() {
-  const courses = await fetchCourses().catch(() => []);
+  const [courses, dailyTerm] = await Promise.all([
+    fetchCourses().catch(() => []),
+    fetchDailyTerm().catch(() => null),
+  ]);
 
   return (
     <main>
@@ -12,6 +15,26 @@ export default async function HomePage() {
           桜色のやさしいUIで、FP・簿記・資産運用の基礎を体系的に学習できます。
         </p>
       </section>
+
+      {dailyTerm && (
+        <section className="mb-8">
+          <div className="rounded-2xl border border-pink-100 bg-gradient-to-r from-pink-50 to-rose-50 p-5 shadow-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="rounded-full bg-pink-500 px-3 py-0.5 text-xs font-bold text-white">今日の用語</span>
+            </div>
+            <p className="text-lg font-bold text-slate-800">
+              {dailyTerm.term}
+              {dailyTerm.reading && (
+                <span className="ml-2 text-sm font-normal text-slate-500">（{dailyTerm.reading}）</span>
+              )}
+            </p>
+            <p className="mt-2 text-sm text-slate-600">{dailyTerm.definition}</p>
+            <Link href="/glossary" className="mt-3 inline-block text-xs font-medium text-pink-500 hover:underline">
+              用語辞典をもっと見る →
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-4 text-xl font-semibold">コース一覧</h2>

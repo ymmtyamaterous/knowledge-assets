@@ -45,3 +45,9 @@ type QuizRepository interface {
 	CreateResult(result domain.UserQuizResult) (domain.UserQuizResult, error)
 	ListResultsByUserID(userID string) ([]domain.UserQuizResult, error)
 }
+
+type NoteRepository interface {
+	FindByUserAndLesson(userID, lessonID string) (domain.UserNote, bool, error)
+	Upsert(note domain.UserNote) (domain.UserNote, error)
+	ListByUserID(userID string) ([]domain.UserNote, error)
+}

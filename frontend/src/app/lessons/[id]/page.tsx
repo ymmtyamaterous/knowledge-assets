@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { completeLesson, fetchLesson, fetchLessonQuiz, fetchMyProgress, uncompleteLesson } from "@/lib/api";
+import { completeLesson, fetchLesson, fetchLessonQuiz, fetchLessonNote, saveLessonNote, fetchMyProgress, uncompleteLesson } from "@/lib/api";
 import type { Lesson } from "@/types/lesson";
 import { useAuth } from "@/features/auth/AuthContext";
 import { use } from "react";
@@ -34,6 +34,9 @@ export default function LessonPage({ params }: Props) {
   const [savingProgress, setSavingProgress] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [noteContent, setNoteContent] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteSaved, setNoteSaved] = useState(false);
 
   useEffect(() => {
     fetchLesson(id)
@@ -55,6 +58,27 @@ export default function LessonPage({ params }: Props) {
       })
       .catch(() => {});
   }, [user, id]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchLessonNote(id)
+      .then((note) => {
+        if (note) setNoteContent(note.content);
+      })
+      .catch(() => {});
+  }, [user, id]);
+
+  const handleSaveNote = async () => {
+    if (!user) return;
+    setSavingNote(true);
+    setNoteSaved(false);
+    try {
+      await saveLessonNote(id, noteContent);
+      setNoteSaved(true);
+    } finally {
+      setSavingNote(false);
+    }
+  };
 
   const handleComplete = useCallback(async () => {
     if (!user) {
@@ -155,6 +179,29 @@ export default function LessonPage({ params }: Props) {
             </Link>
           )}
         </div>
+
+        {user && (
+          <div className="mt-8 border-t border-slate-100 pt-6">
+            <h2 className="mb-2 text-sm font-semibold text-slate-700">📝 メモ</h2>
+            <textarea
+              value={noteContent}
+              onChange={(e) => { setNoteContent(e.target.value); setNoteSaved(false); }}
+              placeholder="このレッスンのメモを入力..."
+              rows={4}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-400"
+            />
+            <div className="mt-2 flex items-center gap-3">
+              <button
+                onClick={handleSaveNote}
+                disabled={savingNote}
+                className="rounded-lg bg-pink-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600 disabled:opacity-50"
+              >
+                {savingNote ? "保存中..." : "メモを保存"}
+              </button>
+              {noteSaved && <span className="text-sm text-green-600">✓ 保存しました</span>}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

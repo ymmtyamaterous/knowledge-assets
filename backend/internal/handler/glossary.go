@@ -59,3 +59,16 @@ func (h *GlossaryHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 	WriteJSON(w, http.StatusOK, term)
 }
+
+func (h *GlossaryHandler) GetDaily(w http.ResponseWriter, _ *http.Request) {
+	term, err := h.uc.GetDailyTerm()
+	if err != nil {
+		if errors.Is(err, usecase.ErrGlossaryTermNotFound) {
+			WriteError(w, http.StatusNotFound, "no terms available")
+			return
+		}
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	WriteJSON(w, http.StatusOK, term)
+}

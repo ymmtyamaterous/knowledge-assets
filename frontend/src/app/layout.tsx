@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/features/auth/AuthContext";
 import Header from "@/components/Header";
+import AIGeneratedNotice from "@/components/AIGeneratedNotice";
 
 export const metadata: Metadata = {
   title: "アセナレ",
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           <Header />
+          <AIGeneratedNotice />
           <div className="mx-auto max-w-5xl px-4 py-6">{children}</div>
         </AuthProvider>
       </body>

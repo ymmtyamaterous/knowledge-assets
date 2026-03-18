@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
-import { fetchQuiz, submitQuiz } from "@/lib/api";
+import { fetchQuiz, submitQuiz, completeLesson, fetchMyProgress } from "@/lib/api";
 import type { QuizDetail, SubmitQuizAnswer } from "@/types/quiz";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -20,6 +20,8 @@ export default function QuizPage({ params }: Props) {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
   const [finalScore, setFinalScore] = useState<{ score: number; total: number } | null>(null);
+  const [lessonCompleted, setLessonCompleted] = useState(false);
+  const [completingLesson, setCompletingLesson] = useState(false);
   const answeredCount = detail ? Object.keys(answers).filter((qId) => !!answers[qId]).length : 0;
 
   useEffect(() => {
@@ -27,6 +29,26 @@ export default function QuizPage({ params }: Props) {
       .then((res) => setDetail(res))
       .catch(() => setDetail(null));
   }, [id]);
+
+  useEffect(() => {
+    if (!user || !detail?.quiz.lessonId) return;
+    fetchMyProgress()
+      .then((list) => {
+        setLessonCompleted(list.some((p) => p.lessonId === detail.quiz.lessonId));
+      })
+      .catch(() => {});
+  }, [user, detail]);
+
+  const handleCompleteLesson = async () => {
+    if (!detail?.quiz.lessonId) return;
+    setCompletingLesson(true);
+    try {
+      await completeLesson(detail.quiz.lessonId);
+      setLessonCompleted(true);
+    } finally {
+      setCompletingLesson(false);
+    }
+  };
 
   const currentQuestion = detail?.questions[currentIndex] ?? null;
 
@@ -86,7 +108,24 @@ export default function QuizPage({ params }: Props) {
           <p className="mt-1 text-sm text-slate-500">
             正答率: {Math.round((finalScore.score / Math.max(finalScore.total, 1)) * 100)}%
           </p>
-          <Link href="/courses" className="mt-6 inline-block rounded-md bg-pink-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600">
+          {detail.quiz.lessonId && (
+            <div className="mt-6">
+              {lessonCompleted ? (
+                <span className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700">
+                  ✓ レッスン完了済み
+                </span>
+              ) : (
+                <button
+                  onClick={handleCompleteLesson}
+                  disabled={completingLesson}
+                  className="rounded-lg bg-green-500 px-5 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-50"
+                >
+                  {completingLesson ? "登録中..." : "レッスンを完了にする"}
+                </button>
+              )}
+            </div>
+          )}
+          <Link href="/courses" className="mt-4 inline-block rounded-md bg-pink-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600">
             コース一覧へ戻る
           </Link>
         </div>

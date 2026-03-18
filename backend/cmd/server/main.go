@@ -46,6 +46,7 @@ func main() {
 	progressRepo := repository.NewPostgresProgressRepository(db)
 	glossaryRepo := repository.NewPostgresGlossaryRepository(db)
 	quizRepo := repository.NewPostgresQuizRepository(db)
+	noteRepo := repository.NewPostgresNoteRepository(db)
 
 	// Use cases
 	authUC := usecase.NewAuthUseCase(userRepo, cfg.JWTSecret)
@@ -55,6 +56,7 @@ func main() {
 	progressUC := usecase.NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo)
 	glossaryUC := usecase.NewGlossaryUseCase(glossaryRepo)
 	quizUC := usecase.NewQuizUseCase(quizRepo, lessonRepo)
+	noteUC := usecase.NewNoteUseCase(noteRepo, lessonRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authUC)
@@ -65,6 +67,7 @@ func main() {
 	progressHandler := handler.NewProgressHandler(progressUC)
 	glossaryHandler := handler.NewGlossaryHandler(glossaryUC)
 	quizHandler := handler.NewQuizHandler(quizUC)
+	noteHandler := handler.NewNoteHandler(noteUC)
 
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.RequestID)
@@ -105,6 +108,7 @@ func main() {
 		// 用語辞典（公開）
 		api.Get("/glossary", glossaryHandler.ListWithFilter)
 		api.Get("/glossary/tags", glossaryHandler.ListTags)
+		api.Get("/glossary/daily", glossaryHandler.GetDaily)
 		api.Get("/glossary/{id}", glossaryHandler.Get)
 
 		// クイズ（公開）
@@ -124,6 +128,11 @@ func main() {
 			private.Get("/users/me/course-progress", progressHandler.GetMyCourseProgress)
 			private.Post("/quizzes/{id}/submit", quizHandler.Submit)
 			private.Get("/users/me/quiz-results", quizHandler.ListMyResults)
+
+			// メモ
+			private.Get("/lessons/{lessonId}/note", noteHandler.GetByLesson)
+			private.Put("/lessons/{lessonId}/note", noteHandler.Save)
+			private.Get("/users/me/notes", noteHandler.ListAll)
 		})
 	})
 

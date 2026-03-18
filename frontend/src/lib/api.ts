@@ -21,6 +21,7 @@ import type {
   QuizResultsResponse,
   UserQuizResult,
 } from "@/types/quiz";
+import type { UserNote, NoteResponse, NotesResponse } from "@/types/note";
 import { authHeaders } from "@/lib/token";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -137,6 +138,10 @@ export async function fetchGlossaryTags(): Promise<GlossaryTag[]> {
   return Array.isArray(data.tags) ? data.tags : [];
 }
 
+export async function fetchDailyTerm(): Promise<GlossaryTerm | null> {
+  return apiFetch<GlossaryTerm>("/api/v1/glossary/daily").catch(() => null);
+}
+
 export async function fetchCourseProgress(): Promise<CourseProgress[]> {
   const data = await apiFetch<Partial<CourseProgressResponse>>("/api/v1/users/me/course-progress");
   return Array.isArray(data.courseProgress) ? data.courseProgress : [];
@@ -161,3 +166,25 @@ export async function fetchMyQuizResults(): Promise<UserQuizResult[]> {
   const data = await apiFetch<Partial<QuizResultsResponse>>("/api/v1/users/me/quiz-results");
   return Array.isArray(data.results) ? data.results : [];
 }
+
+// ---- Notes ----
+
+export async function fetchLessonNote(lessonId: string): Promise<UserNote | null> {
+  const data = await apiFetch<Partial<NoteResponse>>(`/api/v1/lessons/${lessonId}/note`);
+  return data.note ?? null;
+}
+
+export async function saveLessonNote(lessonId: string, content: string): Promise<UserNote> {
+  const data = await apiFetch<{ note: UserNote }>(`/api/v1/lessons/${lessonId}/note`, {
+    method: "PUT",
+    body: JSON.stringify({ content }),
+  });
+  return data.note;
+}
+
+export async function fetchMyNotes(): Promise<UserNote[]> {
+  const data = await apiFetch<Partial<NotesResponse>>("/api/v1/users/me/notes");
+  return Array.isArray(data.notes) ? data.notes : [];
+}
+
+
