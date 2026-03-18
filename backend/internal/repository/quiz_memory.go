@@ -75,6 +75,18 @@ func (r *InMemoryQuizRepository) FindByLessonID(lessonID string) (domain.Quiz, b
 	return domain.Quiz{}, false, nil
 }
 
+func (r *InMemoryQuizRepository) FindBySectionID(sectionID string) (domain.Quiz, bool, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, q := range r.quizzes {
+		if q.SectionID == sectionID && q.LessonID == "" {
+			return q, true, nil
+		}
+	}
+	return domain.Quiz{}, false, nil
+}
+
 func (r *InMemoryQuizRepository) FindByID(id string) (domain.Quiz, bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

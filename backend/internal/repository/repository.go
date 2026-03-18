@@ -40,6 +40,7 @@ type GlossaryRepository interface {
 
 type QuizRepository interface {
 	FindByLessonID(lessonID string) (domain.Quiz, bool, error)
+	FindBySectionID(sectionID string) (domain.Quiz, bool, error)
 	FindByID(id string) (domain.Quiz, bool, error)
 	ListQuestions(quizID string) ([]domain.QuizQuestion, error)
 	CreateResult(result domain.UserQuizResult) (domain.UserQuizResult, error)

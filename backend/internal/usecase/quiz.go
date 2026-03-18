@@ -38,20 +38,33 @@ type SubmitQuizResult struct {
 }
 
 func (uc *QuizUseCase) FindByLessonID(lessonID string) (domain.Quiz, error) {
-	if _, ok, err := uc.lessons.FindByID(lessonID); err != nil {
+	lesson, ok, err := uc.lessons.FindByID(lessonID)
+	if err != nil {
 		return domain.Quiz{}, err
 	} else if !ok {
 		return domain.Quiz{}, ErrLessonNotFound
 	}
 
+	// まずlesson_idで検索
 	quiz, ok, err := uc.quizzes.FindByLessonID(lessonID)
 	if err != nil {
 		return domain.Quiz{}, err
 	}
-	if !ok {
-		return domain.Quiz{}, ErrQuizNotFound
+	if ok {
+		return quiz, nil
 	}
-	return quiz, nil
+
+	// 見つからない場合はそのレッスンのセクションIDでフォールバック検索
+	if lesson.SectionID != "" {
+		quiz, ok, err = uc.quizzes.FindBySectionID(lesson.SectionID)
+		if err != nil {
+			return domain.Quiz{}, err
+		}
+		if ok {
+			return quiz, nil
+		}
+	}
+	return domain.Quiz{}, ErrQuizNotFound
 }
 
 func (uc *QuizUseCase) Get(id string) (QuizDetail, error) {

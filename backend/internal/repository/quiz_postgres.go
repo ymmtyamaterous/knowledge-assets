@@ -27,6 +27,13 @@ func (r *PostgresQuizRepository) FindByLessonID(lessonID string) (domain.Quiz, b
 	return scanQuiz(row)
 }
 
+func (r *PostgresQuizRepository) FindBySectionID(sectionID string) (domain.Quiz, bool, error) {
+	row := r.db.QueryRow(context.Background(),
+		`SELECT id, COALESCE(lesson_id,''), COALESCE(section_id,''), is_mock_exam, COALESCE(time_limit_minutes,0), created_at
+		 FROM quizzes WHERE section_id = $1 AND lesson_id IS NULL ORDER BY created_at LIMIT 1`, sectionID)
+	return scanQuiz(row)
+}
+
 func (r *PostgresQuizRepository) FindByID(id string) (domain.Quiz, bool, error) {
 	row := r.db.QueryRow(context.Background(),
 		`SELECT id, COALESCE(lesson_id,''), COALESCE(section_id,''), is_mock_exam, COALESCE(time_limit_minutes,0), created_at
