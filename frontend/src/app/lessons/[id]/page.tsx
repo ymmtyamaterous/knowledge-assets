@@ -172,7 +172,7 @@ export default function LessonPage({ params }: Props) {
 
           {quiz && (
             <Link
-              href={`/quiz/${quiz.id}`}
+              href={`/quiz/${quiz.id}?lessonId=${id}`}
               className="rounded-lg border border-pink-200 px-4 py-2 text-sm font-semibold text-pink-600 hover:bg-pink-50"
             >
               このレッスンのクイズへ
