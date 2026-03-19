@@ -1,10 +1,22 @@
 package usecase
 
 import (
+	"errors"
 	"testing"
 
 	"asenare/backend/internal/repository"
 )
+
+func TestQuizUseCase_FindByLessonID_DoesNotFallbackToSectionQuiz(t *testing.T) {
+	quizRepo := repository.NewInMemoryQuizRepository()
+	lessonRepo := repository.NewInMemoryLessonRepository()
+	uc := NewQuizUseCase(quizRepo, lessonRepo)
+
+	_, err := uc.FindByLessonID("fp3-s1-l2")
+	if !errors.Is(err, ErrQuizNotFound) {
+		t.Fatalf("expected ErrQuizNotFound, got %v", err)
+	}
+}
 
 func TestQuizUseCase_Submit(t *testing.T) {
 	quizRepo := repository.NewInMemoryQuizRepository()

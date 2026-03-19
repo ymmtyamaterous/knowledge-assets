@@ -1,7 +1,6 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { fetchQuiz, submitQuiz, completeLesson, fetchMyProgress } from "@/lib/api";
 import type { QuizDetail, SubmitQuizAnswer } from "@/types/quiz";
 import Link from "next/link";
@@ -14,13 +13,10 @@ type Props = {
 export default function QuizPage({ params }: Props) {
   const { id } = use(params);
   const { user } = useAuth();
-  const searchParams = useSearchParams();
-  const lessonIdParam = searchParams.get("lessonId") ?? "";
 
   const [detail, setDetail] = useState<QuizDetail | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  // クイズ自体のlessonIdが空の場合はURLパラメータで補完
-  const effectiveLessonId = detail?.quiz.lessonId || lessonIdParam;
+  const effectiveLessonId = detail?.quiz.lessonId ?? "";
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);

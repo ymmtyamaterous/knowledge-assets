@@ -18,7 +18,7 @@ type InMemoryQuizRepository struct {
 
 func NewInMemoryQuizRepository() *InMemoryQuizRepository {
 	now := time.Now().UTC()
-	quiz := domain.Quiz{
+	lessonQuiz := domain.Quiz{
 		ID:               "quiz-fp3-s1-l1",
 		LessonID:         "fp3-s1-l1",
 		SectionID:        "fp3-s1",
@@ -27,10 +27,19 @@ func NewInMemoryQuizRepository() *InMemoryQuizRepository {
 		CreatedAt:        now,
 	}
 
-	questions := []domain.QuizQuestion{
+	sectionQuiz := domain.Quiz{
+		ID:               "quiz-fp3-s1",
+		LessonID:         "",
+		SectionID:        "fp3-s1",
+		IsMockExam:       false,
+		TimeLimitMinutes: 15,
+		CreatedAt:        now,
+	}
+
+	lessonQuestions := []domain.QuizQuestion{
 		{
 			ID:           "q-fp3-1",
-			QuizID:       quiz.ID,
+			QuizID:       lessonQuiz.ID,
 			QuestionText: "ライフプランの説明として最も適切なものはどれですか？",
 			Explanation:  "ライフプランは人生全体の目標を可視化し、必要資金を見積もる長期計画です。",
 			Order:        1,
@@ -42,7 +51,7 @@ func NewInMemoryQuizRepository() *InMemoryQuizRepository {
 		},
 		{
 			ID:           "q-fp3-2",
-			QuizID:       quiz.ID,
+			QuizID:       lessonQuiz.ID,
 			QuestionText: "ライフプラン作成の最初のステップはどれですか？",
 			Explanation:  "最初は現状把握です。収入・支出・資産・負債の整理から始めます。",
 			Order:        2,
@@ -54,10 +63,29 @@ func NewInMemoryQuizRepository() *InMemoryQuizRepository {
 		},
 	}
 
+	sectionQuestions := []domain.QuizQuestion{
+		{
+			ID:           "q-fp3-s1-1",
+			QuizID:       sectionQuiz.ID,
+			QuestionText: "キャッシュフロー表に記載する主な項目はどれですか？",
+			Explanation:  "キャッシュフロー表には年ごとの収入・支出・年間収支・貯蓄残高を記載します。",
+			Order:        1,
+			Choices: []domain.QuizChoice{
+				{ID: "q-fp3-s1-1-c1", QuestionID: "q-fp3-s1-1", ChoiceText: "収入・支出・年間収支・貯蓄残高", IsCorrect: true},
+				{ID: "q-fp3-s1-1-c2", QuestionID: "q-fp3-s1-1", ChoiceText: "株価・金利・為替・物価", IsCorrect: false},
+				{ID: "q-fp3-s1-1-c3", QuestionID: "q-fp3-s1-1", ChoiceText: "資産・負債・純資産のみ", IsCorrect: false},
+			},
+		},
+	}
+
 	return &InMemoryQuizRepository{
-		quizzes: map[string]domain.Quiz{quiz.ID: quiz},
+		quizzes: map[string]domain.Quiz{
+			lessonQuiz.ID:  lessonQuiz,
+			sectionQuiz.ID: sectionQuiz,
+		},
 		questions: map[string][]domain.QuizQuestion{
-			quiz.ID: questions,
+			lessonQuiz.ID:  lessonQuestions,
+			sectionQuiz.ID: sectionQuestions,
 		},
 		results: []domain.UserQuizResult{},
 	}
