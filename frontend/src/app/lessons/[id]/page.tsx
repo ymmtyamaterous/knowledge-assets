@@ -9,6 +9,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { use } from "react";
 import type { Quiz } from "@/types/quiz";
 import { convertMarkdownToHtml } from "@/lib/markdown";
+import NoteDrawer from "@/components/NoteDrawer";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -37,6 +38,7 @@ export default function LessonPage({ params }: Props) {
   const [noteContent, setNoteContent] = useState("");
   const [savingNote, setSavingNote] = useState(false);
   const [noteSaved, setNoteSaved] = useState(false);
+  const [noteDrawerOpen, setNoteDrawerOpen] = useState(false);
 
   useEffect(() => {
     fetchLesson(id)
@@ -140,7 +142,31 @@ export default function LessonPage({ params }: Props) {
       </div>
 
       <div className="rounded-2xl border border-pink-100 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-800">{lesson.title}</h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-bold text-slate-800">{lesson.title}</h1>
+          {user && (
+            <button
+              onClick={() => { setNoteDrawerOpen(true); setNoteSaved(false); }}
+              className="flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:border-pink-300 hover:text-pink-600 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.8}
+                stroke="currentColor"
+                className="h-4 w-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                />
+              </svg>
+              メモ
+            </button>
+          )}
+        </div>
 
         <div className="mt-4 border-t border-slate-100 pt-4">
           <MarkdownContent content={lesson.content} />
@@ -179,30 +205,19 @@ export default function LessonPage({ params }: Props) {
             </Link>
           )}
         </div>
-
-        {user && (
-          <div className="mt-8 border-t border-slate-100 pt-6">
-            <h2 className="mb-2 text-sm font-semibold text-slate-700">📝 メモ</h2>
-            <textarea
-              value={noteContent}
-              onChange={(e) => { setNoteContent(e.target.value); setNoteSaved(false); }}
-              placeholder="このレッスンのメモを入力..."
-              rows={4}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-400"
-            />
-            <div className="mt-2 flex items-center gap-3">
-              <button
-                onClick={handleSaveNote}
-                disabled={savingNote}
-                className="rounded-lg bg-pink-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-600 disabled:opacity-50"
-              >
-                {savingNote ? "保存中..." : "メモを保存"}
-              </button>
-              {noteSaved && <span className="text-sm text-green-600">✓ 保存しました</span>}
-            </div>
-          </div>
-        )}
       </div>
+
+      {user && (
+        <NoteDrawer
+          isOpen={noteDrawerOpen}
+          onClose={() => setNoteDrawerOpen(false)}
+          noteContent={noteContent}
+          onChange={(v) => { setNoteContent(v); setNoteSaved(false); }}
+          onSave={handleSaveNote}
+          saving={savingNote}
+          saved={noteSaved}
+        />
+      )}
     </main>
   );
 }
