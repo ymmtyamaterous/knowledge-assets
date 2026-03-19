@@ -743,6 +743,8 @@ components:
           type: string
         lessonId:
           type: string
+        lessonTitle:
+          type: string
         content:
           type: string
         createdAt:

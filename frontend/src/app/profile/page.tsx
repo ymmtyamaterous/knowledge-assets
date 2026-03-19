@@ -107,7 +107,7 @@ export default function ProfilePage() {
                   href={`/lessons/${note.lessonId}`}
                   className="text-sm font-medium text-pink-500 hover:underline"
                 >
-                  レッスンへ移動
+                  {note.lessonTitle || "レッスンへ移動"}
                 </Link>
                 <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{note.content}</p>
                 <p className="mt-1 text-xs text-slate-400">

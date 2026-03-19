@@ -69,7 +69,7 @@ func (h *NoteHandler) ListAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notes, err := h.uc.ListNotes(userID)
+	notes, err := h.uc.ListNotesWithLesson(userID)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "internal server error")
 		return

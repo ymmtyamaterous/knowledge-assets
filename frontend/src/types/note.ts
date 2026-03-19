@@ -2,6 +2,7 @@ export type UserNote = {
   id: string;
   userId: string;
   lessonId: string;
+  lessonTitle: string;
   content: string;
   createdAt: string;
   updatedAt: string;

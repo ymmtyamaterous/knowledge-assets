@@ -42,3 +42,27 @@ func (uc *NoteUseCase) ListNotes(userID string) ([]domain.UserNote, error) {
 	}
 	return notes, nil
 }
+
+type NoteWithLesson struct {
+	domain.UserNote
+	LessonTitle string `json:"lessonTitle"`
+}
+
+func (uc *NoteUseCase) ListNotesWithLesson(userID string) ([]NoteWithLesson, error) {
+	notes, err := uc.notes.ListByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]NoteWithLesson, 0, len(notes))
+	for _, note := range notes {
+		title := ""
+		if lesson, ok, err := uc.lessons.FindByID(note.LessonID); err == nil && ok {
+			title = lesson.Title
+		}
+		result = append(result, NoteWithLesson{
+			UserNote:    note,
+			LessonTitle: title,
+		})
+	}
+	return result, nil
+}
