@@ -11,8 +11,10 @@ func TestProgressUseCase_GetCourseProgress(t *testing.T) {
 	lessonRepo := repository.NewInMemoryLessonRepository()
 	courseRepo := repository.NewInMemoryCourseRepository()
 	sectionRepo := repository.NewInMemorySectionRepository()
+	quizRepo := repository.NewInMemoryQuizRepository()
+	noteRepo := repository.NewMemoryNoteRepository()
 
-	uc := NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo)
+	uc := NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo, quizRepo, noteRepo)
 
 	if _, err := uc.CompleteLesson("u1", "fp3-s1-l1"); err != nil {
 		t.Fatalf("complete lesson 1: %v", err)
@@ -49,8 +51,10 @@ func TestProgressUseCase_UncompleteLesson(t *testing.T) {
 	lessonRepo := repository.NewInMemoryLessonRepository()
 	courseRepo := repository.NewInMemoryCourseRepository()
 	sectionRepo := repository.NewInMemorySectionRepository()
+	quizRepo := repository.NewInMemoryQuizRepository()
+	noteRepo := repository.NewMemoryNoteRepository()
 
-	uc := NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo)
+	uc := NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo, quizRepo, noteRepo)
 
 	if _, err := uc.CompleteLesson("u1", "fp3-s1-l1"); err != nil {
 		t.Fatalf("complete lesson error: %v", err)
