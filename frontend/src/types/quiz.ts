@@ -40,6 +40,8 @@ export type UserQuizResult = {
   score: number;
   total: number;
   takenAt: string;
+  lessonTitle: string;
+  isMockExam: boolean;
 };
 
 export type SubmitQuizResponse = {

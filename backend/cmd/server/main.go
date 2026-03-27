@@ -57,7 +57,7 @@ func main() {
 	lessonUC := usecase.NewLessonUseCase(lessonRepo, sectionRepo)
 	progressUC := usecase.NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo, quizRepo, noteRepo, badgeRepo)
 	glossaryUC := usecase.NewGlossaryUseCase(glossaryRepo)
-	quizUC := usecase.NewQuizUseCase(quizRepo, lessonRepo)
+	quizUC := usecase.NewQuizUseCase(quizRepo, lessonRepo, sectionRepo)
 	noteUC := usecase.NewNoteUseCase(noteRepo, lessonRepo)
 	searchUC := usecase.NewSearchUseCase(searchRepo)
 

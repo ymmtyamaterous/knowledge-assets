@@ -10,7 +10,8 @@ import (
 func TestQuizUseCase_FindByLessonID_DoesNotFallbackToSectionQuiz(t *testing.T) {
 	quizRepo := repository.NewInMemoryQuizRepository()
 	lessonRepo := repository.NewInMemoryLessonRepository()
-	uc := NewQuizUseCase(quizRepo, lessonRepo)
+	sectionRepo := repository.NewInMemorySectionRepository()
+	uc := NewQuizUseCase(quizRepo, lessonRepo, sectionRepo)
 
 	_, err := uc.FindByLessonID("fp3-s1-l2")
 	if !errors.Is(err, ErrQuizNotFound) {
@@ -21,7 +22,8 @@ func TestQuizUseCase_FindByLessonID_DoesNotFallbackToSectionQuiz(t *testing.T) {
 func TestQuizUseCase_Submit(t *testing.T) {
 	quizRepo := repository.NewInMemoryQuizRepository()
 	lessonRepo := repository.NewInMemoryLessonRepository()
-	uc := NewQuizUseCase(quizRepo, lessonRepo)
+	sectionRepo := repository.NewInMemorySectionRepository()
+	uc := NewQuizUseCase(quizRepo, lessonRepo, sectionRepo)
 
 	detail, err := uc.Get("quiz-fp3-s1-l1")
 	if err != nil {

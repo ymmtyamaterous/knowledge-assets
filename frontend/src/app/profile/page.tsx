@@ -278,7 +278,13 @@ export default function ProfilePage() {
               return (
                 <div key={result.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                   <div>
-                    <p className="text-sm font-medium text-slate-700">クイズ結果 #{quizResults.length - index}</p>
+                    <p className="text-sm font-medium text-slate-700">
+                      {result.isMockExam
+                        ? `模擬試験：${result.lessonTitle || "不明"}`
+                        : result.lessonTitle
+                          ? `${result.lessonTitle}`
+                          : `クイズ結果 #${quizResults.length - index}`}
+                    </p>
                     <p className="mt-0.5 text-xs text-slate-400">
                       {new Date(result.takenAt).toLocaleString("ja-JP")}
                     </p>

@@ -12,12 +12,13 @@ var (
 )
 
 type QuizUseCase struct {
-	quizzes repository.QuizRepository
-	lessons repository.LessonRepository
+	quizzes  repository.QuizRepository
+	lessons  repository.LessonRepository
+	sections repository.SectionRepository
 }
 
-func NewQuizUseCase(quizzes repository.QuizRepository, lessons repository.LessonRepository) *QuizUseCase {
-	return &QuizUseCase{quizzes: quizzes, lessons: lessons}
+func NewQuizUseCase(quizzes repository.QuizRepository, lessons repository.LessonRepository, sections repository.SectionRepository) *QuizUseCase {
+	return &QuizUseCase{quizzes: quizzes, lessons: lessons, sections: sections}
 }
 
 type QuizDetail struct {
@@ -131,4 +132,50 @@ func (uc *QuizUseCase) Submit(userID, quizID string, answers []QuizAnswer) (Subm
 
 func (uc *QuizUseCase) ListResults(userID string) ([]domain.UserQuizResult, error) {
 	return uc.quizzes.ListResultsByUserID(userID)
+}
+
+type QuizResultWithLesson struct {
+	domain.UserQuizResult
+	LessonTitle string `json:"lessonTitle"`
+	IsMockExam  bool   `json:"isMockExam"`
+}
+
+func (uc *QuizUseCase) ListResultsWithLesson(userID string) ([]QuizResultWithLesson, error) {
+	results, err := uc.quizzes.ListResultsByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	enriched := make([]QuizResultWithLesson, 0, len(results))
+	for _, r := range results {
+		quiz, ok, err := uc.quizzes.FindByID(r.QuizID)
+		if err != nil || !ok {
+			enriched = append(enriched, QuizResultWithLesson{UserQuizResult: r, LessonTitle: "", IsMockExam: false})
+			continue
+		}
+
+		var title string
+		if quiz.IsMockExam {
+			if quiz.SectionID != "" {
+				sec, ok, err := uc.sections.FindByID(quiz.SectionID)
+				if err == nil && ok {
+					title = sec.Title
+				}
+			}
+		} else {
+			if quiz.LessonID != "" {
+				lesson, ok, err := uc.lessons.FindByID(quiz.LessonID)
+				if err == nil && ok {
+					title = lesson.Title
+				}
+			}
+		}
+
+		enriched = append(enriched, QuizResultWithLesson{
+			UserQuizResult: r,
+			LessonTitle:    title,
+			IsMockExam:     quiz.IsMockExam,
+		})
+	}
+	return enriched, nil
 }
