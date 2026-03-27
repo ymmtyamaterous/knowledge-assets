@@ -10,6 +10,8 @@ import { use } from "react";
 import type { Quiz } from "@/types/quiz";
 import { convertMarkdownToHtml } from "@/lib/markdown";
 import NoteDrawer from "@/components/NoteDrawer";
+import BadgeToast from "@/components/BadgeToast";
+import type { UserBadge } from "@/types/badge";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -40,6 +42,7 @@ export default function LessonPage({ params }: Props) {
   const [noteSaved, setNoteSaved] = useState(false);
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false);
   const [sectionLessons, setSectionLessons] = useState<Lesson[]>([]);
+  const [newBadges, setNewBadges] = useState<UserBadge[]>([]);
 
   useEffect(() => {
     fetchLesson(id)
@@ -97,8 +100,11 @@ export default function LessonPage({ params }: Props) {
     }
     setSavingProgress(true);
     try {
-      await completeLesson(id);
+      const result = await completeLesson(id);
       setCompleted(true);
+      if (result.newBadges && result.newBadges.length > 0) {
+        setNewBadges(result.newBadges);
+      }
     } finally {
       setSavingProgress(false);
     }
@@ -251,6 +257,8 @@ export default function LessonPage({ params }: Props) {
           saved={noteSaved}
         />
       )}
+
+      <BadgeToast badges={newBadges} onDismiss={() => setNewBadges([])} />
     </main>
   );
 }

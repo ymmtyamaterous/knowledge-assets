@@ -300,6 +300,45 @@ paths:
                 $ref: '#/components/schemas/UserCalendar'
         '401':
           description: Unauthorized
+  /api/v1/users/me/badges:
+    get:
+      summary: 取得済みバッジ一覧
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  badges:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserBadge'
+        '401':
+          description: Unauthorized
+  /api/v1/search:
+    get:
+      summary: コンテンツ検索（レッスン・用語）
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: 検索キーワード
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: キーワードが短すぎる
   /api/v1/glossary:
     get:
       summary: 用語辞典一覧
@@ -873,3 +912,59 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CalendarDay'
+    Badge:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        conditionType:
+          type: string
+        conditionId:
+          type: string
+    UserBadge:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        badge:
+          $ref: '#/components/schemas/Badge'
+        earnedAt:
+          type: string
+          format: date-time
+    SearchLesson:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        sectionId:
+          type: string
+    SearchTerm:
+      type: object
+      properties:
+        id:
+          type: string
+        term:
+          type: string
+        reading:
+          type: string
+    SearchResult:
+      type: object
+      properties:
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchLesson'
+        terms:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchTerm'

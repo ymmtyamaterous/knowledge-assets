@@ -27,7 +27,7 @@ func (h *ProgressHandler) CompleteLesson(w http.ResponseWriter, r *http.Request)
 	}
 
 	lessonID := chi.URLParam(r, "id")
-	progress, err := h.uc.CompleteLesson(userID, lessonID)
+	result, err := h.uc.CompleteLesson(userID, lessonID)
 	if err != nil {
 		if errors.Is(err, usecase.ErrLessonNotFound) {
 			WriteError(w, http.StatusNotFound, "lesson not found")
@@ -37,7 +37,7 @@ func (h *ProgressHandler) CompleteLesson(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, progress)
+	WriteJSON(w, http.StatusOK, result)
 }
 
 func (h *ProgressHandler) UncompleteLesson(w http.ResponseWriter, r *http.Request) {
@@ -151,4 +151,23 @@ func (h *ProgressHandler) GetMyCalendar(w http.ResponseWriter, r *http.Request) 
 	}
 
 	WriteJSON(w, http.StatusOK, cal)
+}
+
+func (h *ProgressHandler) GetMyBadges(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	badges, err := h.uc.GetMyBadges(userID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	if badges == nil {
+		badges = []domain.UserBadge{}
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"badges": badges})
 }

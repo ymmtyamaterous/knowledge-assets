@@ -3,18 +3,24 @@ package usecase
 import (
 	"testing"
 
+	"asenare/backend/internal/domain"
 	"asenare/backend/internal/repository"
 )
 
-func TestProgressUseCase_GetCourseProgress(t *testing.T) {
-	progressRepo := repository.NewInMemoryProgressRepository()
-	lessonRepo := repository.NewInMemoryLessonRepository()
-	courseRepo := repository.NewInMemoryCourseRepository()
-	sectionRepo := repository.NewInMemorySectionRepository()
-	quizRepo := repository.NewInMemoryQuizRepository()
-	noteRepo := repository.NewMemoryNoteRepository()
+func newTestUC() *ProgressUseCase {
+	return NewProgressUseCase(
+		repository.NewInMemoryProgressRepository(),
+		repository.NewInMemoryLessonRepository(),
+		repository.NewInMemoryCourseRepository(),
+		repository.NewInMemorySectionRepository(),
+		repository.NewInMemoryQuizRepository(),
+		repository.NewMemoryNoteRepository(),
+		nil, // badgeRepo: nil でも動作することを確認
+	)
+}
 
-	uc := NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo, quizRepo, noteRepo)
+func TestProgressUseCase_GetCourseProgress(t *testing.T) {
+	uc := newTestUC()
 
 	if _, err := uc.CompleteLesson("u1", "fp3-s1-l1"); err != nil {
 		t.Fatalf("complete lesson 1: %v", err)
@@ -47,14 +53,7 @@ func TestProgressUseCase_GetCourseProgress(t *testing.T) {
 }
 
 func TestProgressUseCase_UncompleteLesson(t *testing.T) {
-	progressRepo := repository.NewInMemoryProgressRepository()
-	lessonRepo := repository.NewInMemoryLessonRepository()
-	courseRepo := repository.NewInMemoryCourseRepository()
-	sectionRepo := repository.NewInMemorySectionRepository()
-	quizRepo := repository.NewInMemoryQuizRepository()
-	noteRepo := repository.NewMemoryNoteRepository()
-
-	uc := NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo, quizRepo, noteRepo)
+	uc := newTestUC()
 
 	if _, err := uc.CompleteLesson("u1", "fp3-s1-l1"); err != nil {
 		t.Fatalf("complete lesson error: %v", err)
@@ -70,5 +69,52 @@ func TestProgressUseCase_UncompleteLesson(t *testing.T) {
 	}
 	if len(progress) != 0 {
 		t.Fatalf("expected progress to be empty, got %d", len(progress))
+	}
+}
+
+func TestProgressUseCase_CompleteLessonReturnsBadge(t *testing.T) {
+	progressRepo := repository.NewInMemoryProgressRepository()
+	lessonRepo := repository.NewInMemoryLessonRepository()
+	courseRepo := repository.NewInMemoryCourseRepository()
+	sectionRepo := repository.NewInMemorySectionRepository()
+	quizRepo := repository.NewInMemoryQuizRepository()
+	noteRepo := repository.NewMemoryNoteRepository()
+	badgeRepo := repository.NewInMemoryBadgeRepository()
+
+	// fp3-s1 のセクション完了バッジをシード
+	badgeRepo.SeedBadge(domain.Badge{
+		ID:            "badge-fp3-s1",
+		Name:          "FP3級 第1章マスター",
+		Description:   "第1章を修了しました",
+		ConditionType: "section_complete",
+		ConditionID:   "fp3-s1",
+	})
+
+	uc := NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo, quizRepo, noteRepo, badgeRepo)
+
+	// fp3-s1 の全レッスンを取得して完了させる
+	lessons, err := lessonRepo.ListBySectionID("fp3-s1")
+	if err != nil {
+		t.Fatalf("list lessons error: %v", err)
+	}
+	if len(lessons) == 0 {
+		t.Fatal("fp3-s1 should have lessons in seed data")
+	}
+
+	var lastResult domain.CompleteLessonResult
+	for _, l := range lessons {
+		result, err := uc.CompleteLesson("u1", l.ID)
+		if err != nil {
+			t.Fatalf("complete lesson %s: %v", l.ID, err)
+		}
+		lastResult = result
+	}
+
+	// 最後のレッスン完了時にバッジが付与されているはず
+	if len(lastResult.NewBadges) == 0 {
+		t.Fatal("expected section complete badge to be awarded on last lesson completion")
+	}
+	if lastResult.NewBadges[0].Badge.ID != "badge-fp3-s1" {
+		t.Fatalf("expected badge-fp3-s1, got %s", lastResult.NewBadges[0].Badge.ID)
 	}
 }

@@ -156,3 +156,41 @@ type CalendarDay struct {
 type UserCalendar struct {
 	Days []CalendarDay `json:"days"`
 }
+
+type Badge struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	ImageURL      string `json:"imageUrl"`
+	ConditionType string `json:"conditionType"`
+	ConditionID   string `json:"conditionId"`
+}
+
+type UserBadge struct {
+	ID       string    `json:"id"`
+	UserID   string    `json:"userId"`
+	Badge    Badge     `json:"badge"`
+	EarnedAt time.Time `json:"earnedAt"`
+}
+
+type CompleteLessonResult struct {
+	Progress  UserLessonProgress `json:"progress"`
+	NewBadges []UserBadge        `json:"newBadges"`
+}
+
+type SearchLesson struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	SectionID string `json:"sectionId"`
+}
+
+type SearchTerm struct {
+	ID      string `json:"id"`
+	Term    string `json:"term"`
+	Reading string `json:"reading"`
+}
+
+type SearchResult struct {
+	Lessons []SearchLesson `json:"lessons"`
+	Terms   []SearchTerm   `json:"terms"`
+}

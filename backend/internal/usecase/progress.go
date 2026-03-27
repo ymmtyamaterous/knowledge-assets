@@ -18,6 +18,7 @@ type ProgressUseCase struct {
 	sections repository.SectionRepository
 	quizzes  repository.QuizRepository
 	notes    repository.NoteRepository
+	badges   repository.BadgeRepository
 }
 
 func NewProgressUseCase(
@@ -27,27 +28,94 @@ func NewProgressUseCase(
 	sections repository.SectionRepository,
 	quizzes repository.QuizRepository,
 	notes repository.NoteRepository,
+	badges repository.BadgeRepository,
 ) *ProgressUseCase {
-	return &ProgressUseCase{progress: progress, lessons: lessons, courses: courses, sections: sections, quizzes: quizzes, notes: notes}
+	return &ProgressUseCase{progress: progress, lessons: lessons, courses: courses, sections: sections, quizzes: quizzes, notes: notes, badges: badges}
 }
 
-func (uc *ProgressUseCase) CompleteLesson(userID, lessonID string) (domain.UserLessonProgress, error) {
-	if _, ok, err := uc.lessons.FindByID(lessonID); err != nil {
-		return domain.UserLessonProgress{}, err
+func (uc *ProgressUseCase) CompleteLesson(userID, lessonID string) (domain.CompleteLessonResult, error) {
+	lesson, ok, err := uc.lessons.FindByID(lessonID)
+	if err != nil {
+		return domain.CompleteLessonResult{}, err
 	} else if !ok {
-		return domain.UserLessonProgress{}, ErrLessonNotFound
+		return domain.CompleteLessonResult{}, ErrLessonNotFound
 	}
 
+	// 冪等: すでに完了済みならバッジなしで返す
 	if existing, ok, err := uc.progress.FindByUserAndLesson(userID, lessonID); err != nil {
-		return domain.UserLessonProgress{}, err
+		return domain.CompleteLessonResult{}, err
 	} else if ok {
-		return existing, nil // 冪等: すでに完了済みならそのまま返す
+		return domain.CompleteLessonResult{Progress: existing, NewBadges: []domain.UserBadge{}}, nil
 	}
 
-	return uc.progress.Create(domain.UserLessonProgress{
+	prog, err := uc.progress.Create(domain.UserLessonProgress{
 		UserID:   userID,
 		LessonID: lessonID,
 	})
+	if err != nil {
+		return domain.CompleteLessonResult{}, err
+	}
+
+	newBadges := []domain.UserBadge{}
+
+	if uc.badges != nil {
+		// セクション完了バッジ判定
+		sectionLessons, err := uc.lessons.ListBySectionID(lesson.SectionID)
+		if err == nil && len(sectionLessons) > 0 {
+			allCompleted := true
+			for _, sl := range sectionLessons {
+				if _, ok, _ := uc.progress.FindByUserAndLesson(userID, sl.ID); !ok {
+					allCompleted = false
+					break
+				}
+			}
+			if allCompleted {
+				if badge, ok, _ := uc.badges.FindByCondition("section_complete", lesson.SectionID); ok {
+					if exists, _ := uc.badges.ExistsUserBadge(userID, badge.ID); !exists {
+						if ub, err := uc.badges.CreateUserBadge(userID, badge.ID); err == nil {
+							newBadges = append(newBadges, ub)
+						}
+					}
+				}
+			}
+		}
+
+		// コース完了バッジ判定
+		section, ok, _ := uc.sections.FindByID(lesson.SectionID)
+		if ok {
+			courseSections, err := uc.sections.ListByCourseID(section.CourseID)
+			if err == nil && len(courseSections) > 0 {
+				allCourseCompleted := true
+				for _, cs := range courseSections {
+					csLessons, err := uc.lessons.ListBySectionID(cs.ID)
+					if err != nil {
+						allCourseCompleted = false
+						break
+					}
+					for _, csl := range csLessons {
+						if _, ok, _ := uc.progress.FindByUserAndLesson(userID, csl.ID); !ok {
+							allCourseCompleted = false
+							break
+						}
+					}
+					if !allCourseCompleted {
+						break
+					}
+				}
+				if allCourseCompleted {
+					if badge, ok, _ := uc.badges.FindByCondition("course_complete", section.CourseID); ok {
+						if exists, _ := uc.badges.ExistsUserBadge(userID, badge.ID); !exists {
+							if ub, err := uc.badges.CreateUserBadge(userID, badge.ID); err == nil {
+								newBadges = append(newBadges, ub)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return domain.CompleteLessonResult{Progress: prog, NewBadges: newBadges}, nil
 }
 
 func (uc *ProgressUseCase) UncompleteLesson(userID, lessonID string) error {
@@ -269,4 +337,12 @@ func (uc *ProgressUseCase) GetCalendar(userID string, year int) (domain.UserCale
 	}
 	sort.Slice(days, func(i, j int) bool { return days[i].Date < days[j].Date })
 	return domain.UserCalendar{Days: days}, nil
+}
+
+// GetMyBadges はユーザーが取得したバッジ一覧を返します。
+func (uc *ProgressUseCase) GetMyBadges(userID string) ([]domain.UserBadge, error) {
+	if uc.badges == nil {
+		return []domain.UserBadge{}, nil
+	}
+	return uc.badges.ListByUserID(userID)
 }

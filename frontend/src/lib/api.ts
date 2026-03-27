@@ -25,6 +25,8 @@ import type {
   UserQuizResult,
 } from "@/types/quiz";
 import type { UserNote, NoteResponse, NotesResponse } from "@/types/note";
+import type { CompleteLessonResult, UserBadgesResponse } from "@/types/badge";
+import type { SearchResult } from "@/types/search";
 import { authHeaders } from "@/lib/token";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -112,8 +114,8 @@ export async function fetchLesson(id: string): Promise<Lesson> {
   return apiFetch<Lesson>(`/api/v1/lessons/${id}`);
 }
 
-export async function completeLesson(lessonId: string): Promise<UserLessonProgress> {
-  return apiFetch<UserLessonProgress>(`/api/v1/lessons/${lessonId}/complete`, {
+export async function completeLesson(lessonId: string): Promise<CompleteLessonResult> {
+  return apiFetch<CompleteLessonResult>(`/api/v1/lessons/${lessonId}/complete`, {
     method: "POST",
   });
 }
@@ -200,6 +202,19 @@ export async function submitQuiz(id: string, answers: SubmitQuizAnswer[]): Promi
 export async function fetchMyQuizResults(): Promise<UserQuizResult[]> {
   const data = await apiFetch<Partial<QuizResultsResponse>>("/api/v1/users/me/quiz-results");
   return Array.isArray(data.results) ? data.results : [];
+}
+
+export async function fetchMyBadges(): Promise<UserBadgesResponse> {
+  const data = await apiFetch<Partial<UserBadgesResponse>>("/api/v1/users/me/badges");
+  return { badges: Array.isArray(data.badges) ? data.badges : [] };
+}
+
+export async function searchContent(q: string): Promise<SearchResult> {
+  const data = await apiFetch<Partial<SearchResult>>(`/api/v1/search?q=${encodeURIComponent(q)}`);
+  return {
+    lessons: Array.isArray(data.lessons) ? data.lessons : [],
+    terms: Array.isArray(data.terms) ? data.terms : [],
+  };
 }
 
 // ---- Notes ----

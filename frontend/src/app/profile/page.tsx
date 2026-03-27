@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/AuthContext";
-import { updateMe, fetchMyNotes, fetchMyQuizResults, changePassword, fetchMyStreak, fetchMyStats } from "@/lib/api";
+import { updateMe, fetchMyNotes, fetchMyQuizResults, changePassword, fetchMyStreak, fetchMyStats, fetchMyBadges } from "@/lib/api";
 import type { UserNote } from "@/types/note";
 import type { UserQuizResult } from "@/types/quiz";
 import type { UserStreak, UserStats } from "@/types/progress";
+import type { UserBadge } from "@/types/badge";
 import Link from "next/link";
 
 export default function ProfilePage() {
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   const [quizResults, setQuizResults] = useState<UserQuizResult[]>([]);
   const [streak, setStreak] = useState<UserStreak>({ currentStreak: 0, longestStreak: 0, lastStudiedAt: "" });
   const [stats, setStats] = useState<UserStats | null>(null);
+  const [badges, setBadges] = useState<UserBadge[]>([]);
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -42,6 +44,7 @@ export default function ProfilePage() {
     fetchMyQuizResults().then(setQuizResults).catch(() => {});
     fetchMyStreak().then(setStreak).catch(() => {});
     fetchMyStats().then(setStats).catch(() => {});
+    fetchMyBadges().then((res) => setBadges(res.badges)).catch(() => {});
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -286,6 +289,27 @@ export default function ProfilePage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* バッジ一覧 */}
+      {badges.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-4 text-lg font-semibold text-slate-800">🏅 獲得バッジ</h2>
+          <div className="grid grid-cols-3 gap-3">
+            {badges.map((ub) => (
+              <div
+                key={ub.id}
+                className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm"
+              >
+                <p className="text-3xl">🏅</p>
+                <p className="mt-1 text-xs font-semibold text-slate-700 leading-tight">{ub.badge.name}</p>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {new Date(ub.earnedAt).toLocaleDateString("ja-JP")}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       )}
