@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/AuthContext";
-import { updateMe, fetchMyNotes, fetchMyQuizResults, changePassword, fetchMyStreak } from "@/lib/api";
+import { updateMe, fetchMyNotes, fetchMyQuizResults, changePassword, fetchMyStreak, fetchMyStats } from "@/lib/api";
 import type { UserNote } from "@/types/note";
 import type { UserQuizResult } from "@/types/quiz";
-import type { UserStreak } from "@/types/progress";
+import type { UserStreak, UserStats } from "@/types/progress";
 import Link from "next/link";
 
 export default function ProfilePage() {
@@ -19,6 +19,7 @@ export default function ProfilePage() {
   const [notes, setNotes] = useState<UserNote[]>([]);
   const [quizResults, setQuizResults] = useState<UserQuizResult[]>([]);
   const [streak, setStreak] = useState<UserStreak>({ currentStreak: 0, longestStreak: 0, lastStudiedAt: "" });
+  const [stats, setStats] = useState<UserStats | null>(null);
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -37,15 +38,10 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    fetchMyNotes()
-      .then((data) => setNotes(data))
-      .catch(() => {});
-    fetchMyQuizResults()
-      .then((data) => setQuizResults(data))
-      .catch(() => {});
-    fetchMyStreak()
-      .then((data) => setStreak(data))
-      .catch(() => {});
+    fetchMyNotes().then(setNotes).catch(() => {});
+    fetchMyQuizResults().then(setQuizResults).catch(() => {});
+    fetchMyStreak().then(setStreak).catch(() => {});
+    fetchMyStats().then(setStats).catch(() => {});
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -140,9 +136,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-2">
             <span className="text-2xl">🔥</span>
             <div>
-              <p className="text-lg font-bold text-pink-600">
-                {streak.currentStreak}日連続学習中！
-              </p>
+              <p className="text-lg font-bold text-pink-600">{streak.currentStreak}日連続学習中！</p>
               <p className="text-xs text-slate-500">最長記録: {streak.longestStreak}日</p>
             </div>
           </div>
@@ -165,9 +159,39 @@ export default function ProfilePage() {
         <p className="mt-1 font-medium text-slate-800">{user?.email}</p>
       </div>
 
+      {/* 学習統計 */}
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold text-slate-800">📊 学習統計</h2>
+        {stats ? (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-pink-50 p-4 text-center">
+              <p className="text-2xl font-bold text-pink-600">{stats.totalCompletedLessons}</p>
+              <p className="mt-1 text-xs text-slate-500">📚 完了レッスン</p>
+            </div>
+            <div className="rounded-lg bg-blue-50 p-4 text-center">
+              <p className="text-2xl font-bold text-blue-600">{stats.totalStudyDays}</p>
+              <p className="mt-1 text-xs text-slate-500">📅 学習日数</p>
+            </div>
+            <div className="rounded-lg bg-green-50 p-4 text-center">
+              <p className="text-2xl font-bold text-green-600">{stats.totalNotes}</p>
+              <p className="mt-1 text-xs text-slate-500">📝 メモ件数</p>
+            </div>
+            <div className="rounded-lg bg-amber-50 p-4 text-center">
+              <p className="text-2xl font-bold text-amber-600">{stats.averageQuizScore.toFixed(1)}%</p>
+              <p className="mt-1 text-xs text-slate-500">🎯 クイズ正答率</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-20 animate-pulse rounded-lg bg-slate-100" />
+            ))}
+          </div>
+        )}
+      </div>
+
       <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <h2 className="text-lg font-semibold text-slate-800">情報の編集</h2>
-
         <div>
           <label htmlFor="username" className="block text-sm font-medium text-slate-700">
             ユーザー名
@@ -180,10 +204,8 @@ export default function ProfilePage() {
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-400"
           />
         </div>
-
         {error && <p className="text-sm text-red-500">{error}</p>}
         {success && <p className="text-sm text-green-500">更新しました！</p>}
-
         <button
           type="submit"
           disabled={loading}
@@ -196,7 +218,6 @@ export default function ProfilePage() {
       {/* パスワード変更 */}
       <form onSubmit={handleChangePassword} className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <h2 className="text-lg font-semibold text-slate-800">パスワード変更</h2>
-
         <div>
           <label htmlFor="pw-current" className="block text-sm font-medium text-slate-700">
             現在のパスワード
@@ -233,10 +254,8 @@ export default function ProfilePage() {
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-400"
           />
         </div>
-
         {pwError && <p className="text-sm text-red-500">{pwError}</p>}
         {pwSuccess && <p className="text-sm text-green-500">パスワードを変更しました！</p>}
-
         <button
           type="submit"
           disabled={pwLoading}
@@ -261,11 +280,9 @@ export default function ProfilePage() {
                       {new Date(result.takenAt).toLocaleString("ja-JP")}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${getScoreBadgeClass(result.score, result.total)}`}>
-                      {result.score} / {result.total}問 ({rate}%)
-                    </span>
-                  </div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${getScoreBadgeClass(result.score, result.total)}`}>
+                    {result.score} / {result.total}問 ({rate}%)
+                  </span>
                 </div>
               );
             })}

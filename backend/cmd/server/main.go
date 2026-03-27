@@ -53,7 +53,7 @@ func main() {
 	courseUC := usecase.NewCourseUseCase(courseRepo)
 	sectionUC := usecase.NewSectionUseCase(sectionRepo, courseRepo)
 	lessonUC := usecase.NewLessonUseCase(lessonRepo, sectionRepo)
-	progressUC := usecase.NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo)
+	progressUC := usecase.NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo, quizRepo, noteRepo)
 	glossaryUC := usecase.NewGlossaryUseCase(glossaryRepo)
 	quizUC := usecase.NewQuizUseCase(quizRepo, lessonRepo)
 	noteUC := usecase.NewNoteUseCase(noteRepo, lessonRepo)
@@ -128,6 +128,8 @@ func main() {
 			private.Get("/users/me/progress", progressHandler.GetMyProgress)
 			private.Get("/users/me/course-progress", progressHandler.GetMyCourseProgress)
 			private.Get("/users/me/streak", progressHandler.GetMyStreak)
+			private.Get("/users/me/stats", progressHandler.GetMyStats)
+			private.Get("/users/me/calendar", progressHandler.GetMyCalendar)
 			private.Post("/quizzes/{id}/submit", quizHandler.Submit)
 			private.Get("/users/me/quiz-results", quizHandler.ListMyResults)
 

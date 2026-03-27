@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchCourseProgress } from "@/lib/api";
-import type { CourseProgress } from "@/types/progress";
+import { fetchCourseProgress, fetchMyCalendar } from "@/lib/api";
+import type { CourseProgress, UserCalendar } from "@/types/progress";
 import { useAuth } from "@/features/auth/AuthContext";
+import LearningCalendar from "@/components/LearningCalendar";
 
 export default function ProgressPage() {
   const { user, loading } = useAuth();
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([]);
   const [openCourseId, setOpenCourseId] = useState<string>("");
   const [fetching, setFetching] = useState(false);
+  const [calendar, setCalendar] = useState<UserCalendar>({ days: [] });
+  const currentYear = new Date().getFullYear();
 
   useEffect(() => {
     if (!user) {
@@ -28,7 +31,10 @@ export default function ProgressPage() {
       })
       .catch(() => setCourseProgress([]))
       .finally(() => setFetching(false));
-  }, [user]);
+    fetchMyCalendar(currentYear)
+      .then(setCalendar)
+      .catch(() => {});
+  }, [user, currentYear]);
 
   if (!loading && !user) {
     return (
@@ -100,6 +106,16 @@ export default function ProgressPage() {
           </div>
         ))}
       </div>
+
+      {/* 学習カレンダー */}
+      {user && (
+        <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-slate-800">
+            📅 {currentYear}年の学習記録
+          </h2>
+          <LearningCalendar days={calendar.days} year={currentYear} />
+        </div>
+      )}
     </main>
   );
 }

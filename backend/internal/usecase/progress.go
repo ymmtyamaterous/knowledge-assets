@@ -16,6 +16,8 @@ type ProgressUseCase struct {
 	lessons  repository.LessonRepository
 	courses  repository.CourseRepository
 	sections repository.SectionRepository
+	quizzes  repository.QuizRepository
+	notes    repository.NoteRepository
 }
 
 func NewProgressUseCase(
@@ -23,8 +25,10 @@ func NewProgressUseCase(
 	lessons repository.LessonRepository,
 	courses repository.CourseRepository,
 	sections repository.SectionRepository,
+	quizzes repository.QuizRepository,
+	notes repository.NoteRepository,
 ) *ProgressUseCase {
-	return &ProgressUseCase{progress: progress, lessons: lessons, courses: courses, sections: sections}
+	return &ProgressUseCase{progress: progress, lessons: lessons, courses: courses, sections: sections, quizzes: quizzes, notes: notes}
 }
 
 func (uc *ProgressUseCase) CompleteLesson(userID, lessonID string) (domain.UserLessonProgress, error) {
@@ -198,4 +202,71 @@ func (uc *ProgressUseCase) GetStreak(userID string) (domain.UserStreak, error) {
 		LongestStreak: longest,
 		LastStudiedAt: lastStudiedAt,
 	}, nil
+}
+
+// GetStats は学習統計サマリを返します。
+func (uc *ProgressUseCase) GetStats(userID string) (domain.UserStats, error) {
+	// 完了レッスン数・学習日数
+	progList, err := uc.progress.ListByUserID(userID)
+	if err != nil {
+		return domain.UserStats{}, err
+	}
+	daySet := make(map[string]struct{}, len(progList))
+	for _, p := range progList {
+		daySet[p.CompletedAt.UTC().Format("2006-01-02")] = struct{}{}
+	}
+
+	// クイズ平均正答率
+	results, err := uc.quizzes.ListResultsByUserID(userID)
+	if err != nil {
+		return domain.UserStats{}, err
+	}
+	var avgScore float64
+	if len(results) > 0 {
+		var sum float64
+		for _, r := range results {
+			if r.Total > 0 {
+				sum += float64(r.Score) / float64(r.Total) * 100
+			}
+		}
+		avgScore = sum / float64(len(results))
+	}
+
+	// メモ件数
+	notes, err := uc.notes.ListByUserID(userID)
+	if err != nil {
+		return domain.UserStats{}, err
+	}
+
+	return domain.UserStats{
+		TotalCompletedLessons: len(progList),
+		TotalStudyDays:        len(daySet),
+		TotalNotes:            len(notes),
+		AverageQuizScore:      avgScore,
+	}, nil
+}
+
+// GetCalendar は指定年の日別完了レッスン数を返します（year=0 の場合は今年）。
+func (uc *ProgressUseCase) GetCalendar(userID string, year int) (domain.UserCalendar, error) {
+	if year == 0 {
+		year = time.Now().UTC().Year()
+	}
+	list, err := uc.progress.ListByUserID(userID)
+	if err != nil {
+		return domain.UserCalendar{}, err
+	}
+	counts := make(map[string]int)
+	for _, p := range list {
+		if p.CompletedAt.UTC().Year() != year {
+			continue
+		}
+		key := p.CompletedAt.UTC().Format("2006-01-02")
+		counts[key]++
+	}
+	days := make([]domain.CalendarDay, 0, len(counts))
+	for date, count := range counts {
+		days = append(days, domain.CalendarDay{Date: date, Count: count})
+	}
+	sort.Slice(days, func(i, j int) bool { return days[i].Date < days[j].Date })
+	return domain.UserCalendar{Days: days}, nil
 }

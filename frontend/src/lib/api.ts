@@ -7,6 +7,8 @@ import type {
   CourseProgress,
   CourseProgressResponse,
   UserStreak,
+  UserStats,
+  UserCalendar,
 } from "@/types/progress";
 import type {
   GlossaryResponse,
@@ -162,6 +164,22 @@ export async function fetchMyStreak(): Promise<UserStreak> {
     longestStreak: data.longestStreak ?? 0,
     lastStudiedAt: data.lastStudiedAt ?? "",
   };
+}
+
+export async function fetchMyStats(): Promise<UserStats> {
+  const data = await apiFetch<Partial<UserStats>>("/api/v1/users/me/stats");
+  return {
+    totalCompletedLessons: data.totalCompletedLessons ?? 0,
+    totalStudyDays: data.totalStudyDays ?? 0,
+    totalNotes: data.totalNotes ?? 0,
+    averageQuizScore: data.averageQuizScore ?? 0,
+  };
+}
+
+export async function fetchMyCalendar(year?: number): Promise<UserCalendar> {
+  const query = year ? `?year=${year}` : "";
+  const data = await apiFetch<Partial<UserCalendar>>(`/api/v1/users/me/calendar${query}`);
+  return { days: Array.isArray(data.days) ? data.days : [] };
 }
 
 export async function fetchLessonQuiz(lessonId: string): Promise<Quiz> {

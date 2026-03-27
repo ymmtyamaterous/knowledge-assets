@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"asenare/backend/internal/domain"
@@ -111,4 +112,43 @@ func (h *ProgressHandler) GetMyStreak(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, streak)
+}
+
+func (h *ProgressHandler) GetMyStats(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	stats, err := h.uc.GetStats(userID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, stats)
+}
+
+func (h *ProgressHandler) GetMyCalendar(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var year int
+	if y := r.URL.Query().Get("year"); y != "" {
+		if _, err := fmt.Sscanf(y, "%d", &year); err != nil {
+			year = 0
+		}
+	}
+
+	cal, err := h.uc.GetCalendar(userID, year)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, cal)
 }

@@ -265,6 +265,41 @@ paths:
                 $ref: '#/components/schemas/UserStreak'
         '401':
           description: Unauthorized
+  /api/v1/users/me/stats:
+    get:
+      summary: 学習統計サマリ取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStats'
+        '401':
+          description: Unauthorized
+  /api/v1/users/me/calendar:
+    get:
+      summary: 学習カレンダー（日別完了数）取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: year
+          schema:
+            type: integer
+          required: false
+          description: 対象年（省略時は今年）
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCalendar'
+        '401':
+          description: Unauthorized
   /api/v1/glossary:
     get:
       summary: 用語辞典一覧
@@ -811,3 +846,30 @@ components:
         lastStudiedAt:
           type: string
           description: "最終学習日 (YYYY-MM-DD)"
+    UserStats:
+      type: object
+      properties:
+        totalCompletedLessons:
+          type: integer
+        totalStudyDays:
+          type: integer
+        totalNotes:
+          type: integer
+        averageQuizScore:
+          type: number
+          format: float
+    CalendarDay:
+      type: object
+      properties:
+        date:
+          type: string
+          description: "YYYY-MM-DD"
+        count:
+          type: integer
+    UserCalendar:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarDay'

@@ -140,3 +140,19 @@ type UserStreak struct {
 	LongestStreak int    `json:"longestStreak"`
 	LastStudiedAt string `json:"lastStudiedAt"` // "2006-01-02" or ""
 }
+
+type UserStats struct {
+	TotalCompletedLessons int     `json:"totalCompletedLessons"`
+	TotalStudyDays        int     `json:"totalStudyDays"`
+	TotalNotes            int     `json:"totalNotes"`
+	AverageQuizScore      float64 `json:"averageQuizScore"` // 0〜100
+}
+
+type CalendarDay struct {
+	Date  string `json:"date"`  // "YYYY-MM-DD"
+	Count int    `json:"count"` // その日の完了レッスン数
+}
+
+type UserCalendar struct {
+	Days []CalendarDay `json:"days"`
+}
