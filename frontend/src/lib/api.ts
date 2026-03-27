@@ -6,6 +6,7 @@ import type {
   UserLessonProgress,
   CourseProgress,
   CourseProgressResponse,
+  UserStreak,
 } from "@/types/progress";
 import type {
   GlossaryResponse,
@@ -68,6 +69,13 @@ export async function updateMe(data: { username?: string; avatarUrl?: string }):
   return apiFetch<User>("/api/v1/users/me", {
     method: "PUT",
     body: JSON.stringify(data),
+  });
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await apiFetch<{ status: string }>("/api/v1/users/me/password", {
+    method: "PUT",
+    body: JSON.stringify({ currentPassword, newPassword }),
   });
 }
 
@@ -145,6 +153,15 @@ export async function fetchDailyTerm(): Promise<GlossaryTerm | null> {
 export async function fetchCourseProgress(): Promise<CourseProgress[]> {
   const data = await apiFetch<Partial<CourseProgressResponse>>("/api/v1/users/me/course-progress");
   return Array.isArray(data.courseProgress) ? data.courseProgress : [];
+}
+
+export async function fetchMyStreak(): Promise<UserStreak> {
+  const data = await apiFetch<Partial<UserStreak>>("/api/v1/users/me/streak");
+  return {
+    currentStreak: data.currentStreak ?? 0,
+    longestStreak: data.longestStreak ?? 0,
+    lastStudiedAt: data.lastStudiedAt ?? "",
+  };
 }
 
 export async function fetchLessonQuiz(lessonId: string): Promise<Quiz> {

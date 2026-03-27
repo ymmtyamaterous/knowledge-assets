@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"sort"
+	"time"
 
 	"asenare/backend/internal/domain"
 	"asenare/backend/internal/repository"
@@ -119,4 +121,81 @@ func (uc *ProgressUseCase) GetCourseProgress(userID string) ([]domain.CourseProg
 	}
 
 	return result, nil
+}
+
+// GetStreak は今日から遡って連続した学習日数と最長連続日数を返します。
+func (uc *ProgressUseCase) GetStreak(userID string) (domain.UserStreak, error) {
+	list, err := uc.progress.ListByUserID(userID)
+	if err != nil {
+		return domain.UserStreak{}, err
+	}
+	if len(list) == 0 {
+		return domain.UserStreak{}, nil
+	}
+
+	// 日付（YYYY-MM-DD）をユニーク化してソート
+	daySet := make(map[string]struct{}, len(list))
+	for _, p := range list {
+		key := p.CompletedAt.UTC().Format("2006-01-02")
+		daySet[key] = struct{}{}
+	}
+	days := make([]string, 0, len(daySet))
+	for d := range daySet {
+		days = append(days, d)
+	}
+	sort.Strings(days) // 昇順
+
+	// 最終学習日
+	lastStudiedAt := days[len(days)-1]
+
+	// 今日から遡って連続日数を計算
+	today := time.Now().UTC().Format("2006-01-02")
+	current := 0
+	check := today
+	for {
+		if _, ok := daySet[check]; ok {
+			current++
+			t, _ := time.Parse("2006-01-02", check)
+			check = t.AddDate(0, 0, -1).Format("2006-01-02")
+		} else {
+			// 今日学習していない場合、昨日から遡る
+			if check == today && current == 0 {
+				yesterday := time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02")
+				if _, ok := daySet[yesterday]; ok {
+					current++
+					t, _ := time.Parse("2006-01-02", yesterday)
+					check = t.AddDate(0, 0, -1).Format("2006-01-02")
+					continue
+				}
+			}
+			break
+		}
+	}
+
+	// 全期間で最長連続日数を計算
+	longest := 0
+	streak := 0
+	for i, d := range days {
+		if i == 0 {
+			streak = 1
+		} else {
+			prev, _ := time.Parse("2006-01-02", days[i-1])
+			cur, _ := time.Parse("2006-01-02", d)
+			diff := cur.Sub(prev).Hours() / 24
+			if diff == 1 {
+				streak++
+			} else {
+				streak = 1
+			}
+		}
+		if streak > longest {
+			longest = streak
+		}
+	}
+
+	return domain.UserStreak{
+		CurrentStreak: current,
+		LongestStreak: longest,
+		LastStudiedAt: lastStudiedAt,
+	}, nil
 }

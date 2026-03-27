@@ -29,3 +29,10 @@ export type CourseProgress = {
 export type CourseProgressResponse = {
   courseProgress: CourseProgress[];
 };
+
+export type UserStreak = {
+  currentStreak: number;
+  longestStreak: number;
+  lastStudiedAt: string; // "YYYY-MM-DD" or ""
+};
+};

@@ -91,6 +91,33 @@ func (uc *AuthUseCase) Login(email, password string) (domain.User, string, error
 	return user, token, nil
 }
 
+func (uc *AuthUseCase) ChangePassword(userID, currentPassword, newPassword string) error {
+	if len(newPassword) < 8 {
+		return ErrInvalidCredentials
+	}
+
+	user, ok, err := uc.users.FindByID(userID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrInvalidCredentials
+	}
+
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)) != nil {
+		return ErrInvalidCredentials
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user.PasswordHash = string(hash)
+	_, err = uc.users.Update(user)
+	return err
+}
+
 func (uc *AuthUseCase) issueToken(user domain.User) (string, error) {
 	now := time.Now().UTC()
 	claims := jwt.MapClaims{

@@ -134,3 +134,9 @@ type UserNote struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
+
+type UserStreak struct {
+	CurrentStreak int    `json:"currentStreak"`
+	LongestStreak int    `json:"longestStreak"`
+	LastStudiedAt string `json:"lastStudiedAt"` // "2006-01-02" or ""
+}

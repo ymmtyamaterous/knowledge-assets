@@ -60,7 +60,7 @@ func main() {
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authUC)
-	userHandler := handler.NewUserHandler(userRepo)
+	userHandler := handler.NewUserHandler(userRepo, authUC)
 	courseHandler := handler.NewCourseHandler(courseUC)
 	sectionHandler := handler.NewSectionHandler(sectionUC)
 	lessonHandler := handler.NewLessonHandler(lessonUC)
@@ -121,11 +121,13 @@ func main() {
 
 			private.Get("/users/me", userHandler.Me)
 			private.Put("/users/me", userHandler.UpdateMe)
+			private.Put("/users/me/password", userHandler.ChangePassword)
 
 			private.Post("/lessons/{id}/complete", progressHandler.CompleteLesson)
 			private.Delete("/lessons/{id}/complete", progressHandler.UncompleteLesson)
 			private.Get("/users/me/progress", progressHandler.GetMyProgress)
 			private.Get("/users/me/course-progress", progressHandler.GetMyCourseProgress)
+			private.Get("/users/me/streak", progressHandler.GetMyStreak)
 			private.Post("/quizzes/{id}/submit", quizHandler.Submit)
 			private.Get("/users/me/quiz-results", quizHandler.ListMyResults)
 

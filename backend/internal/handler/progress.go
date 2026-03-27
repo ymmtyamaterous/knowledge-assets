@@ -96,3 +96,19 @@ func (h *ProgressHandler) GetMyCourseProgress(w http.ResponseWriter, r *http.Req
 	}
 	WriteJSON(w, http.StatusOK, map[string]any{"courseProgress": list})
 }
+
+func (h *ProgressHandler) GetMyStreak(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	streak, err := h.uc.GetStreak(userID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, streak)
+}

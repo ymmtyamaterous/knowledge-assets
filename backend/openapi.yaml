@@ -251,6 +251,20 @@ paths:
                       $ref: '#/components/schemas/CourseProgress'
         '401':
           description: Unauthorized
+  /api/v1/users/me/streak:
+    get:
+      summary: 学習連続日数（ストリーク）取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStreak'
+        '401':
+          description: Unauthorized
   /api/v1/glossary:
     get:
       summary: 用語辞典一覧
@@ -453,6 +467,38 @@ paths:
                 properties:
                   note:
                     $ref: '#/components/schemas/UserNote'
+        '401':
+          description: Unauthorized
+  /api/v1/users/me/password:
+    put:
+      summary: パスワード変更
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          description: パスワード不一致または短すぎる
         '401':
           description: Unauthorized
   /api/v1/users/me/notes:
@@ -753,3 +799,15 @@ components:
         updatedAt:
           type: string
           format: date-time
+    UserStreak:
+      type: object
+      properties:
+        currentStreak:
+          type: integer
+          description: 現在の連続学習日数
+        longestStreak:
+          type: integer
+          description: 最長連続学習日数
+        lastStudiedAt:
+          type: string
+          description: "最終学習日 (YYYY-MM-DD)"

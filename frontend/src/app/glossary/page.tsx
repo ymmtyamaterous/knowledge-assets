@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { fetchGlossary, fetchGlossaryTags } from "@/lib/api";
 import type { GlossaryTag, GlossaryTerm } from "@/types/glossary";
 
@@ -119,17 +120,19 @@ export default function GlossaryPage() {
             return (
               <div
                 key={term.id}
-                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                className="rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-pink-300 hover:shadow-md"
               >
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <h2 className="text-lg font-semibold text-slate-800">{term.term}</h2>
-                  {term.reading && (
-                    <span className="rounded-md bg-slate-50 px-2 py-0.5 text-sm font-medium text-slate-500">{term.reading}</span>
-                  )}
-                </div>
-                <p className="mt-2 text-sm text-slate-600">{term.definition}</p>
+                <Link href={`/glossary/${term.id}`} className="block p-4">
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <h2 className="text-lg font-semibold text-slate-800">{term.term}</h2>
+                    {term.reading && (
+                      <span className="rounded-md bg-slate-50 px-2 py-0.5 text-sm font-medium text-slate-500">{term.reading}</span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">{term.definition}</p>
+                </Link>
                 {termTags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 border-t border-slate-100 px-4 pb-3 pt-2">
                     {termTags.map((tag) => (
                       <button
                         key={`${term.id}-${tag.id}`}

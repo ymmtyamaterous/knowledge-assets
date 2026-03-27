@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { completeLesson, fetchLesson, fetchLessonQuiz, fetchLessonNote, saveLessonNote, fetchMyProgress, uncompleteLesson } from "@/lib/api";
+import { completeLesson, fetchLesson, fetchLessons, fetchLessonQuiz, fetchLessonNote, saveLessonNote, fetchMyProgress, uncompleteLesson } from "@/lib/api";
 import type { Lesson } from "@/types/lesson";
 import { useAuth } from "@/features/auth/AuthContext";
 import { use } from "react";
@@ -39,12 +39,20 @@ export default function LessonPage({ params }: Props) {
   const [savingNote, setSavingNote] = useState(false);
   const [noteSaved, setNoteSaved] = useState(false);
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false);
+  const [sectionLessons, setSectionLessons] = useState<Lesson[]>([]);
 
   useEffect(() => {
     fetchLesson(id)
       .then(setLesson)
       .catch(() => setNotFound(true));
   }, [id]);
+
+  useEffect(() => {
+    if (!lesson) return;
+    fetchLessons(lesson.sectionId)
+      .then(setSectionLessons)
+      .catch(() => setSectionLessons([]));
+  }, [lesson]);
 
   useEffect(() => {
     fetchLessonQuiz(id)
@@ -205,6 +213,31 @@ export default function LessonPage({ params }: Props) {
             </Link>
           )}
         </div>
+
+        {/* 次のレッスンへのナビゲーション */}
+        {(() => {
+          const nextLesson = sectionLessons.find((l) => l.order === (lesson?.order ?? 0) + 1) ?? null;
+          return (
+            <div className="mt-6 flex justify-end border-t border-slate-100 pt-5">
+              {nextLesson ? (
+                <Link
+                  href={`/lessons/${nextLesson.id}`}
+                  className="flex items-center gap-2 rounded-lg bg-pink-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-pink-600"
+                >
+                  <span className="max-w-56 truncate">{nextLesson.title}</span>
+                  <span>→</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/courses"
+                  className="flex items-center gap-2 rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  コース一覧へ戻る
+                </Link>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {user && (
