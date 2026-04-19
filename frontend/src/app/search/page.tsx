@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { searchContent } from "@/lib/api";
 import type { SearchResult } from "@/types/search";
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const q = searchParams.get("q") ?? "";
   const [result, setResult] = useState<SearchResult | null>(null);
@@ -122,5 +122,13 @@ export default function SearchPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="max-w-2xl"><div className="h-8 animate-pulse rounded bg-slate-100" /></div>}>
+      <SearchContent />
+    </Suspense>
   );
 }
