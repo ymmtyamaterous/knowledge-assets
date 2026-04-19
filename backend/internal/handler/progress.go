@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"asenare/backend/internal/domain"
@@ -26,7 +27,7 @@ func (h *ProgressHandler) CompleteLesson(w http.ResponseWriter, r *http.Request)
 	}
 
 	lessonID := chi.URLParam(r, "id")
-	progress, err := h.uc.CompleteLesson(userID, lessonID)
+	result, err := h.uc.CompleteLesson(userID, lessonID)
 	if err != nil {
 		if errors.Is(err, usecase.ErrLessonNotFound) {
 			WriteError(w, http.StatusNotFound, "lesson not found")
@@ -36,7 +37,7 @@ func (h *ProgressHandler) CompleteLesson(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, progress)
+	WriteJSON(w, http.StatusOK, result)
 }
 
 func (h *ProgressHandler) UncompleteLesson(w http.ResponseWriter, r *http.Request) {
@@ -95,4 +96,78 @@ func (h *ProgressHandler) GetMyCourseProgress(w http.ResponseWriter, r *http.Req
 		list = []domain.CourseProgress{}
 	}
 	WriteJSON(w, http.StatusOK, map[string]any{"courseProgress": list})
+}
+
+func (h *ProgressHandler) GetMyStreak(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	streak, err := h.uc.GetStreak(userID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, streak)
+}
+
+func (h *ProgressHandler) GetMyStats(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	stats, err := h.uc.GetStats(userID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, stats)
+}
+
+func (h *ProgressHandler) GetMyCalendar(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var year int
+	if y := r.URL.Query().Get("year"); y != "" {
+		if _, err := fmt.Sscanf(y, "%d", &year); err != nil {
+			year = 0
+		}
+	}
+
+	cal, err := h.uc.GetCalendar(userID, year)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, cal)
+}
+
+func (h *ProgressHandler) GetMyBadges(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	badges, err := h.uc.GetMyBadges(userID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	if badges == nil {
+		badges = []domain.UserBadge{}
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"badges": badges})
 }

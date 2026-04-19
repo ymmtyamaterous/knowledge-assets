@@ -251,6 +251,94 @@ paths:
                       $ref: '#/components/schemas/CourseProgress'
         '401':
           description: Unauthorized
+  /api/v1/users/me/streak:
+    get:
+      summary: 学習連続日数（ストリーク）取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStreak'
+        '401':
+          description: Unauthorized
+  /api/v1/users/me/stats:
+    get:
+      summary: 学習統計サマリ取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStats'
+        '401':
+          description: Unauthorized
+  /api/v1/users/me/calendar:
+    get:
+      summary: 学習カレンダー（日別完了数）取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: year
+          schema:
+            type: integer
+          required: false
+          description: 対象年（省略時は今年）
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCalendar'
+        '401':
+          description: Unauthorized
+  /api/v1/users/me/badges:
+    get:
+      summary: 取得済みバッジ一覧
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  badges:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserBadge'
+        '401':
+          description: Unauthorized
+  /api/v1/search:
+    get:
+      summary: コンテンツ検索（レッスン・用語）
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: 検索キーワード
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: キーワードが短すぎる
   /api/v1/glossary:
     get:
       summary: 用語辞典一覧
@@ -453,6 +541,38 @@ paths:
                 properties:
                   note:
                     $ref: '#/components/schemas/UserNote'
+        '401':
+          description: Unauthorized
+  /api/v1/users/me/password:
+    put:
+      summary: パスワード変更
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          description: パスワード不一致または短すぎる
         '401':
           description: Unauthorized
   /api/v1/users/me/notes:
@@ -753,3 +873,98 @@ components:
         updatedAt:
           type: string
           format: date-time
+    UserStreak:
+      type: object
+      properties:
+        currentStreak:
+          type: integer
+          description: 現在の連続学習日数
+        longestStreak:
+          type: integer
+          description: 最長連続学習日数
+        lastStudiedAt:
+          type: string
+          description: "最終学習日 (YYYY-MM-DD)"
+    UserStats:
+      type: object
+      properties:
+        totalCompletedLessons:
+          type: integer
+        totalStudyDays:
+          type: integer
+        totalNotes:
+          type: integer
+        averageQuizScore:
+          type: number
+          format: float
+    CalendarDay:
+      type: object
+      properties:
+        date:
+          type: string
+          description: "YYYY-MM-DD"
+        count:
+          type: integer
+    UserCalendar:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarDay'
+    Badge:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        conditionType:
+          type: string
+        conditionId:
+          type: string
+    UserBadge:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        badge:
+          $ref: '#/components/schemas/Badge'
+        earnedAt:
+          type: string
+          format: date-time
+    SearchLesson:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        sectionId:
+          type: string
+    SearchTerm:
+      type: object
+      properties:
+        id:
+          type: string
+        term:
+          type: string
+        reading:
+          type: string
+    SearchResult:
+      type: object
+      properties:
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchLesson'
+        terms:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchTerm'

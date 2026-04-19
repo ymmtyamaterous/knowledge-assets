@@ -6,6 +6,9 @@ import type {
   UserLessonProgress,
   CourseProgress,
   CourseProgressResponse,
+  UserStreak,
+  UserStats,
+  UserCalendar,
 } from "@/types/progress";
 import type {
   GlossaryResponse,
@@ -22,6 +25,8 @@ import type {
   UserQuizResult,
 } from "@/types/quiz";
 import type { UserNote, NoteResponse, NotesResponse } from "@/types/note";
+import type { CompleteLessonResult, UserBadgesResponse } from "@/types/badge";
+import type { SearchResult } from "@/types/search";
 import { authHeaders } from "@/lib/token";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -71,6 +76,13 @@ export async function updateMe(data: { username?: string; avatarUrl?: string }):
   });
 }
 
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await apiFetch<{ status: string }>("/api/v1/users/me/password", {
+    method: "PUT",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
 // ---- Courses ----
 
 export async function fetchCourses(): Promise<Course[]> {
@@ -102,8 +114,8 @@ export async function fetchLesson(id: string): Promise<Lesson> {
   return apiFetch<Lesson>(`/api/v1/lessons/${id}`);
 }
 
-export async function completeLesson(lessonId: string): Promise<UserLessonProgress> {
-  return apiFetch<UserLessonProgress>(`/api/v1/lessons/${lessonId}/complete`, {
+export async function completeLesson(lessonId: string): Promise<CompleteLessonResult> {
+  return apiFetch<CompleteLessonResult>(`/api/v1/lessons/${lessonId}/complete`, {
     method: "POST",
   });
 }
@@ -147,6 +159,31 @@ export async function fetchCourseProgress(): Promise<CourseProgress[]> {
   return Array.isArray(data.courseProgress) ? data.courseProgress : [];
 }
 
+export async function fetchMyStreak(): Promise<UserStreak> {
+  const data = await apiFetch<Partial<UserStreak>>("/api/v1/users/me/streak");
+  return {
+    currentStreak: data.currentStreak ?? 0,
+    longestStreak: data.longestStreak ?? 0,
+    lastStudiedAt: data.lastStudiedAt ?? "",
+  };
+}
+
+export async function fetchMyStats(): Promise<UserStats> {
+  const data = await apiFetch<Partial<UserStats>>("/api/v1/users/me/stats");
+  return {
+    totalCompletedLessons: data.totalCompletedLessons ?? 0,
+    totalStudyDays: data.totalStudyDays ?? 0,
+    totalNotes: data.totalNotes ?? 0,
+    averageQuizScore: data.averageQuizScore ?? 0,
+  };
+}
+
+export async function fetchMyCalendar(year?: number): Promise<UserCalendar> {
+  const query = year ? `?year=${year}` : "";
+  const data = await apiFetch<Partial<UserCalendar>>(`/api/v1/users/me/calendar${query}`);
+  return { days: Array.isArray(data.days) ? data.days : [] };
+}
+
 export async function fetchLessonQuiz(lessonId: string): Promise<Quiz> {
   return apiFetch<Quiz>(`/api/v1/lessons/${lessonId}/quiz`);
 }
@@ -165,6 +202,19 @@ export async function submitQuiz(id: string, answers: SubmitQuizAnswer[]): Promi
 export async function fetchMyQuizResults(): Promise<UserQuizResult[]> {
   const data = await apiFetch<Partial<QuizResultsResponse>>("/api/v1/users/me/quiz-results");
   return Array.isArray(data.results) ? data.results : [];
+}
+
+export async function fetchMyBadges(): Promise<UserBadgesResponse> {
+  const data = await apiFetch<Partial<UserBadgesResponse>>("/api/v1/users/me/badges");
+  return { badges: Array.isArray(data.badges) ? data.badges : [] };
+}
+
+export async function searchContent(q: string): Promise<SearchResult> {
+  const data = await apiFetch<Partial<SearchResult>>(`/api/v1/search?q=${encodeURIComponent(q)}`);
+  return {
+    lessons: Array.isArray(data.lessons) ? data.lessons : [],
+    terms: Array.isArray(data.terms) ? data.terms : [],
+  };
 }
 
 // ---- Notes ----

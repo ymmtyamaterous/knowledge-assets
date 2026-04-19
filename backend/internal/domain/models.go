@@ -134,3 +134,63 @@ type UserNote struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
+
+type UserStreak struct {
+	CurrentStreak int    `json:"currentStreak"`
+	LongestStreak int    `json:"longestStreak"`
+	LastStudiedAt string `json:"lastStudiedAt"` // "2006-01-02" or ""
+}
+
+type UserStats struct {
+	TotalCompletedLessons int     `json:"totalCompletedLessons"`
+	TotalStudyDays        int     `json:"totalStudyDays"`
+	TotalNotes            int     `json:"totalNotes"`
+	AverageQuizScore      float64 `json:"averageQuizScore"` // 0〜100
+}
+
+type CalendarDay struct {
+	Date  string `json:"date"`  // "YYYY-MM-DD"
+	Count int    `json:"count"` // その日の完了レッスン数
+}
+
+type UserCalendar struct {
+	Days []CalendarDay `json:"days"`
+}
+
+type Badge struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	ImageURL      string `json:"imageUrl"`
+	ConditionType string `json:"conditionType"`
+	ConditionID   string `json:"conditionId"`
+}
+
+type UserBadge struct {
+	ID       string    `json:"id"`
+	UserID   string    `json:"userId"`
+	Badge    Badge     `json:"badge"`
+	EarnedAt time.Time `json:"earnedAt"`
+}
+
+type CompleteLessonResult struct {
+	Progress  UserLessonProgress `json:"progress"`
+	NewBadges []UserBadge        `json:"newBadges"`
+}
+
+type SearchLesson struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	SectionID string `json:"sectionId"`
+}
+
+type SearchTerm struct {
+	ID      string `json:"id"`
+	Term    string `json:"term"`
+	Reading string `json:"reading"`
+}
+
+type SearchResult struct {
+	Lessons []SearchLesson `json:"lessons"`
+	Terms   []SearchTerm   `json:"terms"`
+}

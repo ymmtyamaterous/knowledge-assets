@@ -52,3 +52,15 @@ type NoteRepository interface {
 	Upsert(note domain.UserNote) (domain.UserNote, error)
 	ListByUserID(userID string) ([]domain.UserNote, error)
 }
+
+type BadgeRepository interface {
+	FindByCondition(conditionType, conditionID string) (domain.Badge, bool, error)
+	CreateUserBadge(userID, badgeID string) (domain.UserBadge, error)
+	ListByUserID(userID string) ([]domain.UserBadge, error)
+	ExistsUserBadge(userID, badgeID string) (bool, error)
+}
+
+type SearchRepository interface {
+	SearchLessons(query string) ([]domain.SearchLesson, error)
+	SearchTerms(query string) ([]domain.SearchTerm, error)
+}

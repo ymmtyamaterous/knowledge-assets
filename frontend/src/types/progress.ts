@@ -29,3 +29,25 @@ export type CourseProgress = {
 export type CourseProgressResponse = {
   courseProgress: CourseProgress[];
 };
+
+export type UserStreak = {
+  currentStreak: number;
+  longestStreak: number;
+  lastStudiedAt: string; // "YYYY-MM-DD" or ""
+};
+
+export type UserStats = {
+  totalCompletedLessons: number;
+  totalStudyDays: number;
+  totalNotes: number;
+  averageQuizScore: number;
+};
+
+export type CalendarDay = {
+  date: string; // "YYYY-MM-DD"
+  count: number;
+};
+
+export type UserCalendar = {
+  days: CalendarDay[];
+};

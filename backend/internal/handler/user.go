@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"asenare/backend/internal/repository"
+	"asenare/backend/internal/usecase"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -16,11 +17,12 @@ type contextKey string
 const userIDContextKey contextKey = "userID"
 
 type UserHandler struct {
-	users repository.UserRepository
+	users  repository.UserRepository
+	authUC *usecase.AuthUseCase
 }
 
-func NewUserHandler(users repository.UserRepository) *UserHandler {
-	return &UserHandler{users: users}
+func NewUserHandler(users repository.UserRepository, authUC *usecase.AuthUseCase) *UserHandler {
+	return &UserHandler{users: users, authUC: authUC}
 }
 
 func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
@@ -85,6 +87,41 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, updated)
+}
+
+type changePasswordRequest struct {
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
+}
+
+func (h *UserHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(userIDContextKey).(string)
+	if userID == "" {
+		WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var req changePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.CurrentPassword == "" || req.NewPassword == "" {
+		WriteError(w, http.StatusBadRequest, "currentPassword and newPassword are required")
+		return
+	}
+
+	if err := h.authUC.ChangePassword(userID, req.CurrentPassword, req.NewPassword); err != nil {
+		if err.Error() == usecase.ErrInvalidCredentials.Error() {
+			WriteError(w, http.StatusBadRequest, "current password is incorrect or new password is too short")
+			return
+		}
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func JWTAuthMiddleware(secret string) func(http.Handler) http.Handler {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"asenare/backend/internal/domain"
 	"asenare/backend/internal/usecase"
 
 	"github.com/go-chi/chi/v5"
@@ -90,13 +89,13 @@ func (h *QuizHandler) ListMyResults(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	list, err := h.uc.ListResults(userID)
+	list, err := h.uc.ListResultsWithLesson(userID)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	if list == nil {
-		list = []domain.UserQuizResult{}
+		list = []usecase.QuizResultWithLesson{}
 	}
 	WriteJSON(w, http.StatusOK, map[string]any{"results": list})
 }

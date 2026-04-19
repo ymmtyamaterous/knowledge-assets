@@ -18,7 +18,7 @@ func TestAuthAndMe(t *testing.T) {
 	authUC := usecase.NewAuthUseCase(userRepo, "test-secret")
 
 	authHandler := NewAuthHandler(authUC)
-	userHandler := NewUserHandler(userRepo)
+	userHandler := NewUserHandler(userRepo, authUC)
 
 	r := chi.NewRouter()
 	r.Post("/api/v1/auth/register", authHandler.Register)

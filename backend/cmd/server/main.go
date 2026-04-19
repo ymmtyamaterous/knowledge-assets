@@ -47,20 +47,23 @@ func main() {
 	glossaryRepo := repository.NewPostgresGlossaryRepository(db)
 	quizRepo := repository.NewPostgresQuizRepository(db)
 	noteRepo := repository.NewPostgresNoteRepository(db)
+	badgeRepo := repository.NewPostgresBadgeRepository(db)
+	searchRepo := repository.NewPostgresSearchRepository(db)
 
 	// Use cases
 	authUC := usecase.NewAuthUseCase(userRepo, cfg.JWTSecret)
 	courseUC := usecase.NewCourseUseCase(courseRepo)
 	sectionUC := usecase.NewSectionUseCase(sectionRepo, courseRepo)
 	lessonUC := usecase.NewLessonUseCase(lessonRepo, sectionRepo)
-	progressUC := usecase.NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo)
+	progressUC := usecase.NewProgressUseCase(progressRepo, lessonRepo, courseRepo, sectionRepo, quizRepo, noteRepo, badgeRepo)
 	glossaryUC := usecase.NewGlossaryUseCase(glossaryRepo)
-	quizUC := usecase.NewQuizUseCase(quizRepo, lessonRepo)
+	quizUC := usecase.NewQuizUseCase(quizRepo, lessonRepo, sectionRepo)
 	noteUC := usecase.NewNoteUseCase(noteRepo, lessonRepo)
+	searchUC := usecase.NewSearchUseCase(searchRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authUC)
-	userHandler := handler.NewUserHandler(userRepo)
+	userHandler := handler.NewUserHandler(userRepo, authUC)
 	courseHandler := handler.NewCourseHandler(courseUC)
 	sectionHandler := handler.NewSectionHandler(sectionUC)
 	lessonHandler := handler.NewLessonHandler(lessonUC)
@@ -68,6 +71,7 @@ func main() {
 	glossaryHandler := handler.NewGlossaryHandler(glossaryUC)
 	quizHandler := handler.NewQuizHandler(quizUC)
 	noteHandler := handler.NewNoteHandler(noteUC)
+	searchHandler := handler.NewSearchHandler(searchUC)
 
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.RequestID)
@@ -115,17 +119,25 @@ func main() {
 		api.Get("/lessons/{lessonId}/quiz", quizHandler.GetByLesson)
 		api.Get("/quizzes/{id}", quizHandler.Get)
 
+		// 検索（公開）
+		api.Get("/search", searchHandler.Search)
+
 		// 要認証エンドポイント
 		api.Group(func(private chi.Router) {
 			private.Use(handler.JWTAuthMiddleware(cfg.JWTSecret))
 
 			private.Get("/users/me", userHandler.Me)
 			private.Put("/users/me", userHandler.UpdateMe)
+			private.Put("/users/me/password", userHandler.ChangePassword)
 
 			private.Post("/lessons/{id}/complete", progressHandler.CompleteLesson)
 			private.Delete("/lessons/{id}/complete", progressHandler.UncompleteLesson)
 			private.Get("/users/me/progress", progressHandler.GetMyProgress)
 			private.Get("/users/me/course-progress", progressHandler.GetMyCourseProgress)
+			private.Get("/users/me/streak", progressHandler.GetMyStreak)
+			private.Get("/users/me/stats", progressHandler.GetMyStats)
+			private.Get("/users/me/calendar", progressHandler.GetMyCalendar)
+			private.Get("/users/me/badges", progressHandler.GetMyBadges)
 			private.Post("/quizzes/{id}/submit", quizHandler.Submit)
 			private.Get("/users/me/quiz-results", quizHandler.ListMyResults)
 

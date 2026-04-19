@@ -34,7 +34,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}-api
           tags: |
-            1.0.0
+            1.1.0
             latest
       
 
